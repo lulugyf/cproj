@@ -1,0 +1,11 @@
+pwd=`pwd`
+libname=`basename $pwd`
+
+objs=""
+for f in *.cpp
+do
+fbname=`echo $f|awk '{print substr($0,1,length($0)-4)}'`
+objs="$objs $fbname.o"
+done
+
+make -f ${WORKDIR}/framework/tools/bp.mk LIBNAME=$libname TAG_OBJS="$objs" all

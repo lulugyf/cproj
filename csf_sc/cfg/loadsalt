@@ -1,0 +1,7 @@
+echo ===================================================================
+export SALTCONFIG=/crmpdpp/csf/run/cfg/saltconfig
+mv saltconfig saltconfig.`date "+%m%d%y"`
+echo "The current saltconfig file was renamed as saltconfig.`date "+%m%d%y"`."
+wsloadcf -y simpapp.dep
+echo "The new SALTCONFIG file was created from simpapp.dep."
+echo ===================================================================

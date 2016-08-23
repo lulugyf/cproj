@@ -1,0 +1,126 @@
+DROP TABLE  CT_CUST_INFO CASCADE CONSTRAINTS;
+
+CREATE TABLE  CT_CUST_INFO
+(
+  CUST_ID            NUMBER(14)                 NOT NULL,
+  TYPE_CODE          NUMBER(4)                  NOT NULL,
+  CUST_NAME          VARCHAR2(100 BYTE)         NOT NULL,
+  CUST_LEVEL         VARCHAR2(3 BYTE)           NOT NULL,
+  ID_TYPE            CHAR(2 BYTE)               NOT NULL,
+  ID_ICCID           VARCHAR2(50 BYTE)          NOT NULL,
+  ID_ADDRESS         VARCHAR2(128 BYTE)         NOT NULL,
+  ID_VALIDDATE       DATE                       NOT NULL,
+  ADMIN_LEVEL        NUMBER(4)                  NOT NULL,
+  STATUS_CODE        NUMBER(4)                  NOT NULL,
+  STATUS_TIME        DATE                       NOT NULL,
+  EXTERN_ADDRESS     VARCHAR2(128 BYTE),
+  CUST_ADDRESS       VARCHAR2(128 BYTE)         NOT NULL,
+  CUST_POST          VARCHAR2(6 BYTE),
+  CREATE_LOGIN       VARCHAR2(20 BYTE)          NOT NULL,
+  CREATE_TIME        DATE                       NOT NULL,
+  GROUP_ID           VARCHAR2(10 BYTE)          NOT NULL,
+  SERVICE_GROUP      VARCHAR2(10 BYTE),
+  OWNED_CHNL_ID      VARCHAR2(10 BYTE)          NOT NULL,
+  EMP_ID             VARCHAR2(14 BYTE),
+  EMP_GROUP          VARCHAR2(10 BYTE),
+  CUST_CD            VARCHAR2(30 BYTE)          NOT NULL,
+  DEFAULT_LANG       VARCHAR2(3 BYTE)           NOT NULL,
+  CARD_TYPE          NUMBER(4)                  NOT NULL,
+  VIP_FLAG           CHAR(1 BYTE)               NOT NULL,
+  VIP_CARD_NO        VARCHAR2(30 BYTE),
+  VIP_CREATE_TYPE    NUMBER(4)                  NOT NULL,
+  SIGN_FLAG          CHAR(1 BYTE)               NOT NULL,
+  TRUE_FLAG          CHAR(1 BYTE)               NOT NULL,
+  FINISH_FLAG        CHAR(1 BYTE)               NOT NULL,
+  OP_TIME            DATE                       NOT NULL,
+  LOGIN_NO           VARCHAR2(20 BYTE)          NOT NULL,
+  LOGIN_ACCEPT       NUMBER(18)                 NOT NULL,
+  OP_CODE            CHAR(5 BYTE)               NOT NULL,
+  CREATE_NOTE        VARCHAR2(128 BYTE)         NOT NULL,
+  ADDRESS_ID         NUMBER(10)                 NOT NULL,
+  CUST_NAME_ENCRYPT  VARCHAR2(400 BYTE)
+);
+
+
+CREATE INDEX  IDX_CT_CUST_ICCID ON  CT_CUST_INFO (ID_ICCID);
+
+
+CREATE INDEX  IDX_CT_CUST_INFO ON  CT_CUST_INFO (LOGIN_ACCEPT);
+
+
+CREATE INDEX  IDX_CT_CUST_INFO_GROUPID ON  CT_CUST_INFO(GROUP_ID);
+
+
+
+CREATE INDEX  IDX_CT_CUST_NAME ON  CT_CUST_INFO (CUST_NAME);
+
+
+CREATE UNIQUE INDEX  PK_CT_CUST_INFO ON  CT_CUST_INFO (CUST_ID) ;
+
+DROP PUBLIC SYNONYM CT_CUST_INFO;
+
+CREATE PUBLIC SYNONYM CT_CUST_INFO FOR  CT_CUST_INFO;
+
+------------------------------------------------------------------------------------------
+
+DROP TABLE  CT_CUST_INFO_HIS CASCADE CONSTRAINTS;
+
+CREATE TABLE  CT_CUST_INFO_HIS
+(
+  TYPE_CODE          NUMBER(4),
+  CUST_NAME          VARCHAR2(100 BYTE)         NOT NULL,
+  CUST_LEVEL         VARCHAR2(3 BYTE),
+  ID_TYPE            CHAR(2 BYTE),
+  ID_ICCID           VARCHAR2(50 BYTE)          NOT NULL,
+  ID_ADDRESS         VARCHAR2(128 BYTE)         NOT NULL,
+  ID_VALIDDATE       DATE                       NOT NULL,
+  ADMIN_LEVEL        NUMBER(4),
+  STATUS_CODE        NUMBER(4),
+  STATUS_TIME        DATE                       NOT NULL,
+  ADDRESS_ID         NUMBER(9),
+  EXTERN_ADDRESS     VARCHAR2(128 BYTE),
+  CUST_ADDRESS       VARCHAR2(128 BYTE)         NOT NULL,
+  CUST_POST          VARCHAR2(6 BYTE),
+  CREATE_LOGIN       VARCHAR2(20 BYTE)          NOT NULL,
+  CREATE_TIME        DATE                       NOT NULL,
+  GROUP_ID           VARCHAR2(10 BYTE)          NOT NULL,
+  SERVICE_GROUP      VARCHAR2(10 BYTE),
+  OWNED_CHNL_ID      VARCHAR2(10 BYTE)          NOT NULL,
+  EMP_ID             VARCHAR2(14 BYTE),
+  EMP_GROUP          VARCHAR2(10 BYTE),
+  CUST_CD            VARCHAR2(30 BYTE)          NOT NULL,
+  DEFAULT_LANG       VARCHAR2(3 BYTE)           NOT NULL,
+  CARD_TYPE          NUMBER(4),
+  VIP_FLAG           CHAR(1 BYTE)               NOT NULL,
+  VIP_CARD_NO        VARCHAR2(30 BYTE),
+  VIP_CREATE_TYPE    NUMBER(4)                  NOT NULL,
+  SIGN_FLAG          CHAR(1 BYTE)               NOT NULL,
+  TRUE_FLAG          CHAR(1 BYTE)               NOT NULL,
+  FINISH_FLAG        CHAR(1 BYTE)               NOT NULL,
+  OP_TIME            DATE                       NOT NULL,
+  LOGIN_NO           VARCHAR2(20 BYTE)          NOT NULL,
+  LOGIN_ACCEPT       NUMBER(18)                 NOT NULL,
+  OP_CODE            CHAR(5 BYTE)               NOT NULL,
+  CREATE_NOTE        VARCHAR2(128 BYTE)         NOT NULL,
+  CUST_ID            NUMBER(14)                 NOT NULL,
+  UPDATE_ACCEPT      NUMBER(18)                 NOT NULL,
+  UPDATE_TIME        DATE                       NOT NULL,
+  UPDATE_DATE        NUMBER(8)                  NOT NULL,
+  UPDATE_LOGIN       VARCHAR2(20 BYTE)          NOT NULL,
+  UPDATE_TYPE        CHAR(1 BYTE)               NOT NULL,
+  UPDATE_CODE        CHAR(5 BYTE)               NOT NULL,
+  CUST_NAME_ENCRYPT  VARCHAR2(400 BYTE)
+);
+
+
+CREATE INDEX  CT_CUST_INFO_HIS_N1 ON  CT_CUST_INFO_HIS (UPDATE_ACCEPT);
+
+
+CREATE UNIQUE INDEX  PK_CT_CUST_INFO_HIS ON  CT_CUST_INFO_HIS
+(CUST_ID, UPDATE_ACCEPT, UPDATE_TYPE);
+
+
+DROP PUBLIC SYNONYM CT_CUST_INFO_HIS;
+
+CREATE PUBLIC SYNONYM CT_CUST_INFO_HIS FOR  CT_CUST_INFO_HIS;
+

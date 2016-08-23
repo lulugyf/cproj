@@ -1,0 +1,73 @@
+####################################################
+#	(c) 2007 BEA Systems, Inc. All Rights Reserved.
+#
+#	ident	"@(#) TuxWS/samples/simpapp/tux/simpapp.ubb.template	$Revision: 1.1 $"
+#
+#	Skeleton UBBCONFIG file for the TUXEDO SALT 2.0 secsapp Application.
+#	Replace the @FIELD@ items with the appropriate values.
+
+####################################################
+#
+*RESOURCES
+IPCKEY          131459
+DOMAINID    simpapp
+MASTER        simple
+MAXACCESSERS             1024
+MAXSERVERS             1024
+MAXSERVICES             400
+MAXNETGROUPS             100
+MAXGTT                 100
+MAXCONV             100
+SCANUNIT             10
+SANITYSCAN             5
+BBLQUERY             180
+BLOCKTIME             900
+MODEL        SHM
+LDBAL        N
+
+
+####################################################
+#
+*MACHINES
+"BssDemo"     LMID=simple
+                TUXDIR="/tuxedo11g/tuxedo11gR1"
+                APPDIR="/crmpdpp/csf/run/bin"
+                TUXCONFIG="/crmpdpp/csf/run/cfg/tuxconfig"
+
+                MAXWSCLIENTS=1000
+
+
+
+
+####################################################
+#
+*GROUPS
+GROUP1            LMID=simple     GRPNO=1 OPENINFO=NONE
+WTCGRP_LPCTEST    LMID=simple     GRPNO=260 OPENINFO=NONE
+
+####################################################
+#
+*SERVERS
+DEFAULT:
+            CLOPT="-A"
+
+
+
+
+TMMETADATA  SRVGRP=GROUP1 SRVID=2
+            CLOPT="-A -- -f /crmpdpp/csf/run/cfg/mdr_simpapp.repos"
+GWWS        SRVGRP=GROUP1 SRVID=3
+            CLOPT="-A -- -iGWWS1"
+WSL         SRVGRP=GROUP1 SRVID=4 RESTART=Y MAXGEN=10
+                CLOPT= "-A -t -- -n //172.21.1.72:7887 -m10 -M50 -x10 -K both -c 10204"
+DMADM        SRVGRP=WTCGRP_LPCTEST    SRVID=11
+GWADM        SRVGRP=WTCGRP_LPCTEST    SRVID=22
+GWTDOMAIN    SRVGRP=WTCGRP_LPCTEST    SRVID=33 CLOPT="-A -t"
+server_test	SRVGRP=GROUP1 SRVID=1
+s10         SRVGRP=GROUP1 SRVID=5
+RRouteInfo  SRVGRP=GROUP1 SRVID=6 CONV=N MIN=20 MAX=20 CLOPT="-A"
+            
+####################################################
+#
+*SERVICES
+

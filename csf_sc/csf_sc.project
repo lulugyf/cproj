@@ -1,0 +1,1002 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeLite_Project Name="csf_sc" InternalType="Console">
+  <Description/>
+  <Dependencies/>
+  <Settings Type="Executable">
+    <GlobalSettings>
+      <Compiler Options="" C_Options="" Assembler="">
+        <IncludePath Value="."/>
+      </Compiler>
+      <Linker Options="">
+        <LibraryPath Value="."/>
+      </Linker>
+      <ResourceCompiler Options=""/>
+    </GlobalSettings>
+    <Configuration Name="Debug" CompilerType="gnu g++" DebuggerType="GNU gdb debugger" Type="" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-g;-O0;-Wall" C_Options="-g;-O0;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" UseDifferentPCHFlags="no" PCHFlags="">
+        <IncludePath Value="."/>
+      </Compiler>
+      <Linker Options="" Required="yes"/>
+      <ResourceCompiler Options="" Required="no"/>
+      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="./Debug" Command="./$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
+        <![CDATA[]]>
+      </Environment>
+      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="">
+        <DebuggerSearchPaths/>
+        <PostConnectCommands/>
+        <StartupCommands/>
+      </Debugger>
+      <PreBuild/>
+      <PostBuild/>
+      <CustomBuild Enabled="no">
+        <RebuildCommand/>
+        <CleanCommand/>
+        <BuildCommand/>
+        <PreprocessFileCommand/>
+        <SingleFileCommand/>
+        <MakefileGenerationCommand/>
+        <ThirdPartyToolName>None</ThirdPartyToolName>
+        <WorkingDirectory/>
+      </CustomBuild>
+      <AdditionalRules>
+        <CustomPostBuild/>
+        <CustomPreBuild/>
+      </AdditionalRules>
+      <Completion EnableCpp11="no">
+        <ClangCmpFlagsC/>
+        <ClangCmpFlags/>
+        <ClangPP/>
+        <SearchPaths/>
+      </Completion>
+    </Configuration>
+    <Configuration Name="Release" CompilerType="gnu g++" DebuggerType="GNU gdb debugger" Type="" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-O2;-Wall" C_Options="-O2;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" UseDifferentPCHFlags="no" PCHFlags="">
+        <IncludePath Value="."/>
+        <Preprocessor Value="NDEBUG"/>
+      </Compiler>
+      <Linker Options="" Required="yes"/>
+      <ResourceCompiler Options="" Required="no"/>
+      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="./Release" Command="./$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
+        <![CDATA[]]>
+      </Environment>
+      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="">
+        <DebuggerSearchPaths/>
+        <PostConnectCommands/>
+        <StartupCommands/>
+      </Debugger>
+      <PreBuild/>
+      <PostBuild/>
+      <CustomBuild Enabled="no">
+        <RebuildCommand/>
+        <CleanCommand/>
+        <BuildCommand/>
+        <PreprocessFileCommand/>
+        <SingleFileCommand/>
+        <MakefileGenerationCommand/>
+        <ThirdPartyToolName>None</ThirdPartyToolName>
+        <WorkingDirectory/>
+      </CustomBuild>
+      <AdditionalRules>
+        <CustomPostBuild/>
+        <CustomPreBuild/>
+      </AdditionalRules>
+      <Completion EnableCpp11="no">
+        <ClangCmpFlagsC/>
+        <ClangCmpFlags/>
+        <ClangPP/>
+        <SearchPaths/>
+      </Completion>
+    </Configuration>
+  </Settings>
+  <VirtualDirectory Name="cfg">
+    <File Name="cfg/acceptfile.sem"/>
+    <File Name="cfg/acceptfile.shm"/>
+    <File Name="cfg/appbus.cfg"/>
+    <File Name="cfg/boss.cfg"/>
+    <File Name="cfg/clean_qms"/>
+    <File Name="cfg/common.cfg"/>
+    <File Name="cfg/crm.cfg"/>
+    <File Name="cfg/db.cfg"/>
+    <File Name="cfg/DMCONFIG"/>
+    <File Name="cfg/l4c.cfg"/>
+    <File Name="cfg/loadcfg"/>
+    <File Name="cfg/loaddm"/>
+    <File Name="cfg/loadsalt"/>
+    <File Name="cfg/logfunc.cfg"/>
+    <File Name="cfg/mdr_simpapp.mif"/>
+    <File Name="cfg/my_run.sh"/>
+    <File Name="cfg/pwd"/>
+    <File Name="cfg/pwd.cfg"/>
+    <File Name="cfg/sDBLogin.cfg"/>
+    <File Name="cfg/server_test.c"/>
+    <File Name="cfg/simpapp.dep"/>
+    <File Name="cfg/simpapp.ubb"/>
+    <File Name="cfg/simpapp.wsdf"/>
+    <File Name="cfg/simpapp_2.wsdl"/>
+    <VirtualDirectory Name="tstop">
+      <File Name="cfg/tstop/s1000QCListT.cfg"/>
+      <File Name="cfg/tstop/s1000QCustT.cfg"/>
+      <File Name="cfg/tstop/s1052CfmT.cfg"/>
+      <File Name="cfg/tstop/s1052WebChgT.cfg"/>
+      <File Name="cfg/tstop/s1055InitT.cfg"/>
+      <File Name="cfg/tstop/s1100CfmT.cfg"/>
+      <File Name="cfg/tstop/s1100QueryT.cfg"/>
+      <File Name="cfg/tstop/s1106CfmT.cfg"/>
+      <File Name="cfg/tstop/s1112QueryT.cfg"/>
+      <File Name="cfg/tstop/s1122QueryT.cfg"/>
+      <File Name="cfg/tstop/s1138CfmT.cfg"/>
+      <File Name="cfg/tstop/s1138QueryT.cfg"/>
+      <File Name="cfg/tstop/s2107QueryT.cfg"/>
+      <File Name="cfg/tstop/s2112CfmT.cfg"/>
+      <File Name="cfg/tstop/s2112QueryT.cfg"/>
+      <File Name="cfg/tstop/s2361QueryT.cfg"/>
+      <File Name="cfg/tstop/s2370QueryT.cfg"/>
+      <File Name="cfg/tstop/s3858QryT.cfg"/>
+      <File Name="cfg/tstop/s3866QryT.cfg"/>
+      <File Name="cfg/tstop/sAttrQryT.cfg"/>
+      <File Name="cfg/tstop/sAttrQryTT.cfg"/>
+      <File Name="cfg/tstop/sAttrQryTTest.cfg"/>
+      <File Name="cfg/tstop/sDynSvc1.cfg"/>
+      <File Name="cfg/tstop/sGroupRoleQryT.cfg"/>
+      <File Name="cfg/tstop/sGrpInfoQryT.cfg"/>
+      <File Name="cfg/tstop/sLoginCheckT.cfg"/>
+      <File Name="cfg/tstop/sLoginMdlQryT.cfg"/>
+      <File Name="cfg/tstop/sLogMenuQryT.cfg"/>
+      <File Name="cfg/tstop/sProdDetailQryT.cfg"/>
+      <File Name="cfg/tstop/sProdPrcQryT.cfg"/>
+      <File Name="cfg/tstop/sPubCheckIdT.cfg"/>
+      <File Name="cfg/tstop/sPubQPhListT.cfg"/>
+      <File Name="cfg/tstop/sQAllCustT.cfg"/>
+      <File Name="cfg/tstop/sQCustByCustIdT.cfg"/>
+      <File Name="cfg/tstop/sQUserProdT.cfg"/>
+      <File Name="cfg/tstop/sQUsrMbrT.cfg"/>
+      <File Name="cfg/tstop/sQUsrProdAttrT.cfg"/>
+      <File Name="cfg/tstop/sQUsrProdInfoT.cfg"/>
+      <File Name="cfg/tstop/sQUsrProdPrcT.cfg"/>
+      <File Name="cfg/tstop/sShortcutQryT.cfg"/>
+    </VirtualDirectory>
+    <File Name="cfg/UBBCONFIG"/>
+    <File Name="cfg/UBBCONFIG_1107OK"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="framework">
+    <VirtualDirectory Name="include">
+      <File Name="framework/include/accountBC.h"/>
+      <File Name="framework/include/ahlocalBC.h"/>
+      <File Name="framework/include/allBCP.h"/>
+      <File Name="framework/include/basementBC.h"/>
+      <File Name="framework/include/basementBP.h"/>
+      <File Name="framework/include/cipher.h"/>
+      <File Name="framework/include/commcustsvc.h"/>
+      <File Name="framework/include/custmngBP.h"/>
+      <File Name="framework/include/customerBC.h"/>
+      <File Name="framework/include/CustSvc.h"/>
+      <File Name="framework/include/custsvcBP.h"/>
+      <File Name="framework/include/custviewBC.h"/>
+      <File Name="framework/include/custviewBP.h"/>
+      <File Name="framework/include/des.h"/>
+      <File Name="framework/include/framework.h"/>
+      <File Name="framework/include/interactionBC.h"/>
+      <File Name="framework/include/IVRBP.h"/>
+      <File Name="framework/include/kfBC.h"/>
+      <File Name="framework/include/kfBP.h"/>
+      <File Name="framework/include/LogFunc.h"/>
+      <File Name="framework/include/marketBC.h"/>
+      <File Name="framework/include/marketBP.h"/>
+      <File Name="framework/include/obossBC.h"/>
+      <File Name="framework/include/obossBP.h"/>
+      <File Name="framework/include/orderBC.h"/>
+      <File Name="framework/include/ordersvcBP.h"/>
+      <File Name="framework/include/otlv4.h"/>
+      <File Name="framework/include/prodBP.h"/>
+      <File Name="framework/include/prodDefine.h"/>
+      <File Name="framework/include/productBC.h"/>
+      <File Name="framework/include/pub.h"/>
+      <File Name="framework/include/pubBase.h"/>
+      <File Name="framework/include/pubBCP.h"/>
+      <File Name="framework/include/pubCrm.h"/>
+      <File Name="framework/include/pubInter.h"/>
+      <File Name="framework/include/publicBP.h"/>
+      <File Name="framework/include/publicsrv.h"/>
+      <File Name="framework/include/pubPlat.h"/>
+      <File Name="framework/include/pubProd.h"/>
+      <File Name="framework/include/scoreBP.h"/>
+      <File Name="framework/include/sxacctmngBP.h"/>
+      <File Name="framework/include/t.sh"/>
+      <File Name="framework/include/testBCP.h"/>
+      <File Name="framework/include/tuxhead.h"/>
+      <File Name="framework/include/userBC.h"/>
+      <File Name="framework/include/zzbTestBCP.h"/>
+    </VirtualDirectory>
+    <VirtualDirectory Name="pub">
+      <VirtualDirectory Name="BossLib">
+        <VirtualDirectory Name="include">
+          <File Name="framework/pub/BossLib/include/CLBase.h"/>
+          <File Name="framework/pub/BossLib/include/CLCommand.h"/>
+          <File Name="framework/pub/BossLib/include/CLDbDriver.h"/>
+          <File Name="framework/pub/BossLib/include/CLDomain.h"/>
+          <File Name="framework/pub/BossLib/include/CLDriver.h"/>
+          <File Name="framework/pub/BossLib/include/CLError.h"/>
+          <File Name="framework/pub/BossLib/include/CLException.h"/>
+          <File Name="framework/pub/BossLib/include/CLFile.h"/>
+          <File Name="framework/pub/BossLib/include/CLLayer.h"/>
+          <File Name="framework/pub/BossLib/include/CLRecordSet.h"/>
+          <File Name="framework/pub/BossLib/include/CLRight.h"/>
+          <File Name="framework/pub/BossLib/include/CLRule.h"/>
+          <File Name="framework/pub/BossLib/include/CLShmDriver.h"/>
+          <File Name="framework/pub/BossLib/include/db.h"/>
+          <File Name="framework/pub/BossLib/include/llayerStruct.h"/>
+          <File Name="framework/pub/BossLib/include/ltypedef.h"/>
+          <File Name="framework/pub/BossLib/include/province.h"/>
+        </VirtualDirectory>
+        <VirtualDirectory Name="src">
+          <File Name="framework/pub/BossLib/src/afiedt.buf"/>
+          <File Name="framework/pub/BossLib/src/CLBase.cpp"/>
+          <File Name="framework/pub/BossLib/src/CLCommand.cpp"/>
+          <File Name="framework/pub/BossLib/src/CLDbDriver.cpp"/>
+          <File Name="framework/pub/BossLib/src/CLDomain.cpp"/>
+          <File Name="framework/pub/BossLib/src/CLDriver.cpp"/>
+          <File Name="framework/pub/BossLib/src/CLError.cpp"/>
+          <File Name="framework/pub/BossLib/src/CLException.cpp"/>
+          <File Name="framework/pub/BossLib/src/CLFile.cpp"/>
+          <File Name="framework/pub/BossLib/src/CLLayer.cpp"/>
+          <File Name="framework/pub/BossLib/src/CLRecordSet.cpp"/>
+          <File Name="framework/pub/BossLib/src/CLRight.cpp"/>
+          <File Name="framework/pub/BossLib/src/CLRule.cpp"/>
+          <File Name="framework/pub/BossLib/src/CLShmDriver.cpp"/>
+          <File Name="framework/pub/BossLib/src/db.cpp"/>
+          <File Name="framework/pub/BossLib/src/db.pc"/>
+          <File Name="framework/pub/BossLib/src/makefile"/>
+          <File Name="framework/pub/BossLib/src/mk_release"/>
+        </VirtualDirectory>
+      </VirtualDirectory>
+      <VirtualDirectory Name="BossTuxLib">
+        <VirtualDirectory Name="include">
+          <File Name="framework/pub/BossTuxLib/include/CLBusiFuncMgr.h"/>
+          <File Name="framework/pub/BossTuxLib/include/CLDomErrorHandler.h"/>
+          <File Name="framework/pub/BossTuxLib/include/CLTux.h"/>
+          <File Name="framework/pub/BossTuxLib/include/CLTuxParam.h"/>
+          <File Name="framework/pub/BossTuxLib/include/ferror32.h"/>
+          <File Name="framework/pub/BossTuxLib/include/general32.flds.h"/>
+          <File Name="framework/pub/BossTuxLib/include/UnifyView.xsd"/>
+          <File Name="framework/pub/BossTuxLib/include/UnifyView.xsx"/>
+          <File Name="framework/pub/BossTuxLib/include/xml.h"/>
+        </VirtualDirectory>
+        <VirtualDirectory Name="src">
+          <File Name="framework/pub/BossTuxLib/src/CLBusiFuncMgr.cpp"/>
+          <File Name="framework/pub/BossTuxLib/src/CLDomErrorHandler.cpp"/>
+          <File Name="framework/pub/BossTuxLib/src/CLTux.cpp"/>
+          <File Name="framework/pub/BossTuxLib/src/CLTuxParam.cpp"/>
+          <File Name="framework/pub/BossTuxLib/src/makefile"/>
+        </VirtualDirectory>
+      </VirtualDirectory>
+      <VirtualDirectory Name="filter">
+        <File Name="framework/pub/filter/filter.cpp"/>
+        <File Name="framework/pub/filter/filter.h"/>
+        <File Name="framework/pub/filter/makefile"/>
+        <File Name="framework/pub/filter/readme.txt"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="include">
+        <File Name="framework/pub/include/pub.h"/>
+        <File Name="framework/pub/include/publicsrv.h"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="libbase">
+        <File Name="framework/pub/libbase/makefile"/>
+        <File Name="framework/pub/libbase/pubInclude.c"/>
+        <File Name="framework/pub/libbase/publicBaseFunc.c"/>
+        <File Name="framework/pub/libbase/publicErr.c"/>
+        <File Name="framework/pub/libbase/publicM.c"/>
+        <File Name="framework/pub/libbase/publicOus.c"/>
+        <File Name="framework/pub/libbase/pubTongli.c"/>
+        <File Name="framework/pub/libbase/scp_cmd.c"/>
+        <File Name="framework/pub/libbase/smap_cmd.c"/>
+        <File Name="framework/pub/libbase/sxAtomPublicFunc.c"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="libbusi">
+        <File Name="framework/pub/libbusi/cipher"/>
+        <File Name="framework/pub/libbusi/cipher_main"/>
+        <File Name="framework/pub/libbusi/cipher_main.c"/>
+        <File Name="framework/pub/libbusi/makefile"/>
+        <File Name="framework/pub/libbusi/mk.cipher"/>
+        <File Name="framework/pub/libbusi/publicBusi.cpp"/>
+        <File Name="framework/pub/libbusi/publicBusi.cpp.mine"/>
+        <File Name="framework/pub/libbusi/publicBusi.cpp.r2374"/>
+        <File Name="framework/pub/libbusi/publicBusi.cpp.r4166"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="libcallesbcurl">
+        <File Name="framework/pub/libcallesbcurl/a.json"/>
+        <File Name="framework/pub/libcallesbcurl/a.xml"/>
+        <File Name="framework/pub/libcallesbcurl/b.sh"/>
+        <File Name="framework/pub/libcallesbcurl/bc.sh"/>
+        <File Name="framework/pub/libcallesbcurl/c.sh"/>
+        <VirtualDirectory Name="curl_home">
+          <VirtualDirectory Name="bin">
+            <File Name="framework/pub/libcallesbcurl/curl_home/bin/curl"/>
+            <File Name="framework/pub/libcallesbcurl/curl_home/bin/curl-config"/>
+          </VirtualDirectory>
+          <VirtualDirectory Name="include">
+            <VirtualDirectory Name="curl">
+              <File Name="framework/pub/libcallesbcurl/curl_home/include/curl/curl.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home/include/curl/curlbuild.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home/include/curl/curlrules.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home/include/curl/curlver.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home/include/curl/easy.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home/include/curl/mprintf.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home/include/curl/multi.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home/include/curl/stdcheaders.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home/include/curl/typecheck-gcc.h"/>
+            </VirtualDirectory>
+          </VirtualDirectory>
+          <VirtualDirectory Name="lib">
+            <File Name="framework/pub/libcallesbcurl/curl_home/lib/libcurl.a"/>
+            <File Name="framework/pub/libcallesbcurl/curl_home/lib/libcurl.la"/>
+            <VirtualDirectory Name="pkgconfig">
+              <File Name="framework/pub/libcallesbcurl/curl_home/lib/pkgconfig/libcurl.pc"/>
+            </VirtualDirectory>
+          </VirtualDirectory>
+        </VirtualDirectory>
+        <VirtualDirectory Name="curl_home_hp">
+          <VirtualDirectory Name="bin">
+            <File Name="framework/pub/libcallesbcurl/curl_home_hp/bin/curl"/>
+            <File Name="framework/pub/libcallesbcurl/curl_home_hp/bin/curl-config"/>
+          </VirtualDirectory>
+          <VirtualDirectory Name="include">
+            <VirtualDirectory Name="curl">
+              <File Name="framework/pub/libcallesbcurl/curl_home_hp/include/curl/curl.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_hp/include/curl/curlbuild.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_hp/include/curl/curlrules.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_hp/include/curl/curlver.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_hp/include/curl/easy.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_hp/include/curl/mprintf.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_hp/include/curl/multi.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_hp/include/curl/stdcheaders.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_hp/include/curl/typecheck-gcc.h"/>
+            </VirtualDirectory>
+          </VirtualDirectory>
+          <VirtualDirectory Name="lib">
+            <File Name="framework/pub/libcallesbcurl/curl_home_hp/lib/libcurl.a"/>
+            <File Name="framework/pub/libcallesbcurl/curl_home_hp/lib/libcurl.la"/>
+            <VirtualDirectory Name="pkgconfig">
+              <File Name="framework/pub/libcallesbcurl/curl_home_hp/lib/pkgconfig/libcurl.pc"/>
+            </VirtualDirectory>
+          </VirtualDirectory>
+        </VirtualDirectory>
+        <VirtualDirectory Name="curl_home_ibm">
+          <VirtualDirectory Name="bin">
+            <File Name="framework/pub/libcallesbcurl/curl_home_ibm/bin/curl"/>
+            <File Name="framework/pub/libcallesbcurl/curl_home_ibm/bin/curl-config"/>
+          </VirtualDirectory>
+          <VirtualDirectory Name="include">
+            <VirtualDirectory Name="curl">
+              <File Name="framework/pub/libcallesbcurl/curl_home_ibm/include/curl/curl.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_ibm/include/curl/curlbuild.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_ibm/include/curl/curlrules.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_ibm/include/curl/curlver.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_ibm/include/curl/easy.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_ibm/include/curl/mprintf.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_ibm/include/curl/multi.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_ibm/include/curl/stdcheaders.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_ibm/include/curl/typecheck-gcc.h"/>
+            </VirtualDirectory>
+          </VirtualDirectory>
+          <VirtualDirectory Name="lib">
+            <File Name="framework/pub/libcallesbcurl/curl_home_ibm/lib/libcurl.a"/>
+            <File Name="framework/pub/libcallesbcurl/curl_home_ibm/lib/libcurl.la"/>
+            <VirtualDirectory Name="pkgconfig">
+              <File Name="framework/pub/libcallesbcurl/curl_home_ibm/lib/pkgconfig/libcurl.pc"/>
+            </VirtualDirectory>
+          </VirtualDirectory>
+        </VirtualDirectory>
+        <VirtualDirectory Name="curl_home_linux">
+          <VirtualDirectory Name="bin">
+            <File Name="framework/pub/libcallesbcurl/curl_home_linux/bin/curl"/>
+            <File Name="framework/pub/libcallesbcurl/curl_home_linux/bin/curl-config"/>
+          </VirtualDirectory>
+          <VirtualDirectory Name="include">
+            <VirtualDirectory Name="curl">
+              <File Name="framework/pub/libcallesbcurl/curl_home_linux/include/curl/curl.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_linux/include/curl/curlbuild.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_linux/include/curl/curlrules.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_linux/include/curl/curlver.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_linux/include/curl/easy.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_linux/include/curl/mprintf.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_linux/include/curl/multi.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_linux/include/curl/stdcheaders.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_linux/include/curl/typecheck-gcc.h"/>
+            </VirtualDirectory>
+          </VirtualDirectory>
+          <VirtualDirectory Name="lib">
+            <File Name="framework/pub/libcallesbcurl/curl_home_linux/lib/libcurl.a"/>
+            <File Name="framework/pub/libcallesbcurl/curl_home_linux/lib/libcurl.la"/>
+            <VirtualDirectory Name="pkgconfig">
+              <File Name="framework/pub/libcallesbcurl/curl_home_linux/lib/pkgconfig/libcurl.pc"/>
+            </VirtualDirectory>
+          </VirtualDirectory>
+        </VirtualDirectory>
+        <VirtualDirectory Name="curl_home_sun">
+          <VirtualDirectory Name="bin">
+            <File Name="framework/pub/libcallesbcurl/curl_home_sun/bin/curl"/>
+            <File Name="framework/pub/libcallesbcurl/curl_home_sun/bin/curl-config"/>
+          </VirtualDirectory>
+          <VirtualDirectory Name="include">
+            <VirtualDirectory Name="curl">
+              <File Name="framework/pub/libcallesbcurl/curl_home_sun/include/curl/curl.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_sun/include/curl/curlbuild.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_sun/include/curl/curlrules.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_sun/include/curl/curlver.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_sun/include/curl/easy.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_sun/include/curl/mprintf.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_sun/include/curl/multi.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_sun/include/curl/stdcheaders.h"/>
+              <File Name="framework/pub/libcallesbcurl/curl_home_sun/include/curl/typecheck-gcc.h"/>
+            </VirtualDirectory>
+          </VirtualDirectory>
+          <VirtualDirectory Name="lib">
+            <File Name="framework/pub/libcallesbcurl/curl_home_sun/lib/libcurl.a"/>
+            <File Name="framework/pub/libcallesbcurl/curl_home_sun/lib/libcurl.la"/>
+            <VirtualDirectory Name="pkgconfig">
+              <File Name="framework/pub/libcallesbcurl/curl_home_sun/lib/pkgconfig/libcurl.pc"/>
+            </VirtualDirectory>
+          </VirtualDirectory>
+        </VirtualDirectory>
+        <File Name="framework/pub/libcallesbcurl/demo.sh"/>
+        <File Name="framework/pub/libcallesbcurl/dlopen_test.cpp"/>
+        <File Name="framework/pub/libcallesbcurl/httpcustomheader.c"/>
+        <File Name="framework/pub/libcallesbcurl/makefile"/>
+        <File Name="framework/pub/libcallesbcurl/pCallESBApi.cpp"/>
+        <File Name="framework/pub/libcallesbcurl/pCallESBWS.cpp"/>
+        <File Name="framework/pub/libcallesbcurl/readme"/>
+        <File Name="framework/pub/libcallesbcurl/rest_json.txt"/>
+        <File Name="framework/pub/libcallesbcurl/test.c"/>
+        <File Name="framework/pub/libcallesbcurl/testso"/>
+        <File Name="framework/pub/libcallesbcurl/testso.cpp"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="libcallesb_g">
+        <VirtualDirectory Name="esb_cli">
+          <File Name="framework/pub/libcallesb_g/esb_cli/b.sh"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/callwq.txt"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/demo.cpp"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/demo.sh"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/error.txt"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/esb-wsdl-rest-readme.docx"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/esb.h"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/esb.wsdl"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/esba.txt"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/esbb.txt"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/esbc.txt"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/esbnew.txt"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/esb_cli.c"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/esb_cli.h"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/httppost.c"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/httppost.h"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/main.c"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/makefile"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/mk.AIX"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/mk.CYGWIN_NT-6.1"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/mk.HP-UX"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/mk.Linux"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/mk.SunOS"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/r.sh"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/readme.txt"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/rest.log"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/rs.sh"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/rsp_json.data"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/rsp_xml.data"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/s.c"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/sDynSvcSoap11Binding.callService.req.xml"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/sDynSvcSoap11Binding.callService.res.xml"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/sDynSvcSoap11Binding.nsmap"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/soapC.c"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/soapClient.c"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/soapClientLib.c"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/soapH.h"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/soapStub.h"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/stdsoap2.c"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/stdsoap2.h"/>
+          <File Name="framework/pub/libcallesb_g/esb_cli/ws.log"/>
+        </VirtualDirectory>
+        <File Name="framework/pub/libcallesb_g/makefile"/>
+        <File Name="framework/pub/libcallesb_g/mm.sh"/>
+        <File Name="framework/pub/libcallesb_g/pCallESBApi.cpp"/>
+        <File Name="framework/pub/libcallesb_g/pCallESBApi_old.cpp"/>
+        <File Name="framework/pub/libcallesb_g/pCallESBWS.cpp"/>
+        <File Name="framework/pub/libcallesb_g/t1.cpp"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="libcfg">
+        <File Name="framework/pub/libcfg/getcfg.cpp"/>
+        <File Name="framework/pub/libcfg/getdb.cpp"/>
+        <File Name="framework/pub/libcfg/makefile"/>
+        <File Name="framework/pub/libcfg/setmpwd.cpp"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="libcipher">
+        <File Name="framework/pub/libcipher/cipher.c"/>
+        <File Name="framework/pub/libcipher/cipher.h"/>
+        <File Name="framework/pub/libcipher/makefile"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="libdbconn">
+        <File Name="framework/pub/libdbconn/a.c"/>
+        <File Name="framework/pub/libdbconn/a.sh"/>
+        <File Name="framework/pub/libdbconn/b.sh"/>
+        <File Name="framework/pub/libdbconn/makefile"/>
+        <File Name="framework/pub/libdbconn/publicDb.cpp"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="libdbug">
+        <File Name="framework/pub/libdbug/a.cpp"/>
+        <File Name="framework/pub/libdbug/CLConfig.h"/>
+        <File Name="framework/pub/libdbug/CLCriticalSection.cpp"/>
+        <File Name="framework/pub/libdbug/CLCriticalSection.h"/>
+        <File Name="framework/pub/libdbug/CLDbug.cpp"/>
+        <File Name="framework/pub/libdbug/CLDbug.h"/>
+        <File Name="framework/pub/libdbug/CLDbugLibInit.cpp"/>
+        <File Name="framework/pub/libdbug/CLDbugLibInit.h"/>
+        <File Name="framework/pub/libdbug/CLGlobalErrors.cpp"/>
+        <File Name="framework/pub/libdbug/CLGlobalErrors.h"/>
+        <File Name="framework/pub/libdbug/CLMalloc.cpp"/>
+        <File Name="framework/pub/libdbug/CLMalloc.h"/>
+        <File Name="framework/pub/libdbug/CLMap.h"/>
+        <File Name="framework/pub/libdbug/CLNumber.cpp"/>
+        <File Name="framework/pub/libdbug/CLNumber.h"/>
+        <File Name="framework/pub/libdbug/CLProcess.cpp"/>
+        <File Name="framework/pub/libdbug/CLProcess.h"/>
+        <File Name="framework/pub/libdbug/CLThread.cpp"/>
+        <File Name="framework/pub/libdbug/CLThread.h"/>
+        <File Name="framework/pub/libdbug/CLThreadCond.cpp"/>
+        <File Name="framework/pub/libdbug/CLThreadCond.h"/>
+        <File Name="framework/pub/libdbug/global.h"/>
+        <File Name="framework/pub/libdbug/libdbug.h"/>
+        <File Name="framework/pub/libdbug/makefile"/>
+        <File Name="framework/pub/libdbug/ReadMe.txt"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="libdes">
+        <File Name="framework/pub/libdes/3cbc_enc.c"/>
+        <File Name="framework/pub/libdes/3ecb_enc.c"/>
+        <File Name="framework/pub/libdes/ARTISTIC"/>
+        <File Name="framework/pub/libdes/cbc_cksm.c"/>
+        <File Name="framework/pub/libdes/cbc_enc.c"/>
+        <File Name="framework/pub/libdes/cfb_enc.c"/>
+        <File Name="framework/pub/libdes/CHANGES"/>
+        <File Name="framework/pub/libdes/COPYING"/>
+        <File Name="framework/pub/libdes/des"/>
+        <File Name="framework/pub/libdes/des.c"/>
+        <File Name="framework/pub/libdes/des.h"/>
+        <File Name="framework/pub/libdes/des.man"/>
+        <File Name="framework/pub/libdes/des.pl"/>
+        <File Name="framework/pub/libdes/dest"/>
+        <File Name="framework/pub/libdes/destest.c"/>
+        <File Name="framework/pub/libdes/des_crypt.man"/>
+        <File Name="framework/pub/libdes/des_decenc.c"/>
+        <File Name="framework/pub/libdes/des_locl.h"/>
+        <File Name="framework/pub/libdes/doIP"/>
+        <File Name="framework/pub/libdes/doPC1"/>
+        <File Name="framework/pub/libdes/doPC2"/>
+        <File Name="framework/pub/libdes/ecb_enc.c"/>
+        <File Name="framework/pub/libdes/encrypt.c"/>
+        <File Name="framework/pub/libdes/enc_read.c"/>
+        <File Name="framework/pub/libdes/enc_writ.c"/>
+        <File Name="framework/pub/libdes/enPasswd"/>
+        <File Name="framework/pub/libdes/fcrypt.c"/>
+        <File Name="framework/pub/libdes/FILES"/>
+        <File Name="framework/pub/libdes/fl_list"/>
+        <File Name="framework/pub/libdes/INSTALL"/>
+        <File Name="framework/pub/libdes/KERBEROS"/>
+        <File Name="framework/pub/libdes/lgztest"/>
+        <File Name="framework/pub/libdes/lgztest.c"/>
+        <File Name="framework/pub/libdes/libencrypt.c"/>
+        <File Name="framework/pub/libdes/makefile"/>
+        <File Name="framework/pub/libdes/MODES.DES"/>
+        <File Name="framework/pub/libdes/ofb_enc.c"/>
+        <File Name="framework/pub/libdes/PC1"/>
+        <File Name="framework/pub/libdes/PC2"/>
+        <File Name="framework/pub/libdes/pcbc_enc.c"/>
+        <File Name="framework/pub/libdes/podd.h"/>
+        <File Name="framework/pub/libdes/qud_cksm.c"/>
+        <File Name="framework/pub/libdes/rand_key.c"/>
+        <File Name="framework/pub/libdes/README"/>
+        <File Name="framework/pub/libdes/read_pwd.c"/>
+        <File Name="framework/pub/libdes/rpw"/>
+        <File Name="framework/pub/libdes/rpw.c"/>
+        <File Name="framework/pub/libdes/set_key.c"/>
+        <File Name="framework/pub/libdes/shifts.pl"/>
+        <File Name="framework/pub/libdes/sk.h"/>
+        <File Name="framework/pub/libdes/speed"/>
+        <File Name="framework/pub/libdes/speed.c"/>
+        <File Name="framework/pub/libdes/spr.h"/>
+        <File Name="framework/pub/libdes/src"/>
+        <File Name="framework/pub/libdes/str2key.c"/>
+        <File Name="framework/pub/libdes/test"/>
+        <File Name="framework/pub/libdes/testdes.pl"/>
+        <File Name="framework/pub/libdes/times"/>
+        <File Name="framework/pub/libdes/VERSION"/>
+        <File Name="framework/pub/libdes/vms.com"/>
+        <File Name="framework/pub/libdes/CSFDes.java"/>
+        <File Name="framework/pub/libdes/CSFDes.cpp"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="liblogfunc">
+        <File Name="framework/pub/liblogfunc/LogFunc.cpp"/>
+        <File Name="framework/pub/liblogfunc/LogFunc.h"/>
+        <File Name="framework/pub/liblogfunc/makefile"/>
+        <File Name="framework/pub/liblogfunc/tuxadpcall.cpp"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="liblogutype">
+        <File Name="framework/pub/liblogutype/liblogutype.cpp"/>
+        <File Name="framework/pub/liblogutype/liblogutype.h"/>
+        <File Name="framework/pub/liblogutype/makefile"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="libpassutype">
+        <File Name="framework/pub/libpassutype/libpassutype.cpp"/>
+        <File Name="framework/pub/libpassutype/makefile"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="libshm">
+        <File Name="framework/pub/libshm/makefile"/>
+        <File Name="framework/pub/libshm/publicF.c"/>
+        <File Name="framework/pub/libshm/publicP.c"/>
+        <File Name="framework/pub/libshm/publicS.c"/>
+        <File Name="framework/pub/libshm/publicShm.c"/>
+        <File Name="framework/pub/libshm/publicT.c"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="libsys">
+        <File Name="framework/pub/libsys/CLArray.cpp"/>
+        <File Name="framework/pub/libsys/CLArray.h"/>
+        <File Name="framework/pub/libsys/CLAse.cpp"/>
+        <File Name="framework/pub/libsys/CLAse.h"/>
+        <File Name="framework/pub/libsys/CLBit.cpp"/>
+        <File Name="framework/pub/libsys/CLBit.h"/>
+        <File Name="framework/pub/libsys/CLBitmap.cpp"/>
+        <File Name="framework/pub/libsys/CLBitmap.h"/>
+        <File Name="framework/pub/libsys/CLCrc32.cpp"/>
+        <File Name="framework/pub/libsys/CLList.cpp"/>
+        <File Name="framework/pub/libsys/CLList.h"/>
+        <File Name="framework/pub/libsys/CLMd5.cpp"/>
+        <File Name="framework/pub/libsys/CLMd5.h"/>
+        <File Name="framework/pub/libsys/CLMsgQueue.cpp"/>
+        <File Name="framework/pub/libsys/CLMsgQueue.h"/>
+        <File Name="framework/pub/libsys/CLQsort.cpp"/>
+        <File Name="framework/pub/libsys/CLQsort.h"/>
+        <File Name="framework/pub/libsys/CLQuery.cpp"/>
+        <File Name="framework/pub/libsys/CLQuery.h"/>
+        <File Name="framework/pub/libsys/CLRbtree.cpp"/>
+        <File Name="framework/pub/libsys/CLRbtree.h"/>
+        <File Name="framework/pub/libsys/CLSemaphore.cpp"/>
+        <File Name="framework/pub/libsys/CLSemaphore.h"/>
+        <File Name="framework/pub/libsys/CLSha1.cpp"/>
+        <File Name="framework/pub/libsys/CLSha1.h"/>
+        <File Name="framework/pub/libsys/CLShm.cpp"/>
+        <File Name="framework/pub/libsys/CLShm.h"/>
+        <File Name="framework/pub/libsys/CLString.cpp"/>
+        <File Name="framework/pub/libsys/CLString.h"/>
+        <File Name="framework/pub/libsys/CLThreadPool.cpp"/>
+        <File Name="framework/pub/libsys/CLThreadPool.h"/>
+        <File Name="framework/pub/libsys/CLThreadRwLock.cpp"/>
+        <File Name="framework/pub/libsys/CLThreadRwLock.h"/>
+        <File Name="framework/pub/libsys/libsys.h"/>
+        <File Name="framework/pub/libsys/makefile"/>
+        <File Name="framework/pub/libsys/ReadMe.txt"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="publog">
+        <File Name="framework/pub/publog/l4c.cfg"/>
+        <File Name="framework/pub/publog/log4c.c"/>
+        <File Name="framework/pub/publog/log4c.h"/>
+        <File Name="framework/pub/publog/makefile"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="router">
+        <File Name="framework/pub/router/makefile"/>
+        <VirtualDirectory Name="old"/>
+        <File Name="framework/pub/router/router.cpp"/>
+        <File Name="framework/pub/router/router.h"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="rule">
+        <File Name="framework/pub/rule/makefile"/>
+        <File Name="framework/pub/rule/RRuleCheck.cpp"/>
+        <File Name="framework/pub/rule/RRuleCheck.dep"/>
+        <File Name="framework/pub/rule/rule.cpp"/>
+        <File Name="framework/pub/rule/rule.h"/>
+        <File Name="framework/pub/rule/rule1.json"/>
+        <File Name="framework/pub/rule/rulecheckall.cpp"/>
+        <File Name="framework/pub/rule/ruleck.cpp"/>
+        <File Name="framework/pub/rule/ruletest.txt"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="tuxadp">
+        <File Name="framework/pub/tuxadp/adapter.cpp"/>
+        <File Name="framework/pub/tuxadp/adapter.h"/>
+        <File Name="framework/pub/tuxadp/calltrace.cpp"/>
+        <File Name="framework/pub/tuxadp/calltrace.h"/>
+        <File Name="framework/pub/tuxadp/dbconn.cpp"/>
+        <File Name="framework/pub/tuxadp/dbconn.h"/>
+        <File Name="framework/pub/tuxadp/errlog.cpp"/>
+        <File Name="framework/pub/tuxadp/errlog.h"/>
+        <File Name="framework/pub/tuxadp/errlog_imp.cpp"/>
+        <File Name="framework/pub/tuxadp/errmng.cpp"/>
+        <File Name="framework/pub/tuxadp/framework.cpp"/>
+        <File Name="framework/pub/tuxadp/makefile"/>
+        <File Name="framework/pub/tuxadp/ngx.cpp"/>
+        <File Name="framework/pub/tuxadp/tux.cpp"/>
+        <File Name="framework/pub/tuxadp/tuxadp.cpp"/>
+        <File Name="framework/pub/tuxadp/tuxadp.cpp.bak"/>
+        <File Name="framework/pub/tuxadp/tuxadp.h"/>
+        <File Name="framework/pub/tuxadp/util_socket.c"/>
+        <File Name="framework/pub/tuxadp/util_socket.cpp"/>
+        <File Name="framework/pub/tuxadp/tuxadp_ah.cpp"/>
+        <File Name="framework/pub/tuxadp/tuxadp_sx.cpp"/>
+        <File Name="framework/pub/tuxadp/tuxadp222_sx_boss.cpp"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="utype">
+        <File Name="framework/pub/utype/a.txt"/>
+        <File Name="framework/pub/utype/b.txt"/>
+        <File Name="framework/pub/utype/convert.cpp"/>
+        <VirtualDirectory Name="jsonc">
+          <File Name="framework/pub/utype/jsonc/arraylist.c"/>
+          <File Name="framework/pub/utype/jsonc/arraylist.h"/>
+          <File Name="framework/pub/utype/jsonc/bits.h"/>
+          <File Name="framework/pub/utype/jsonc/config.h"/>
+          <File Name="framework/pub/utype/jsonc/debug.c"/>
+          <File Name="framework/pub/utype/jsonc/debug.h"/>
+          <File Name="framework/pub/utype/jsonc/json.h"/>
+          <File Name="framework/pub/utype/jsonc/json_inttypes.h"/>
+          <File Name="framework/pub/utype/jsonc/json_object.c"/>
+          <File Name="framework/pub/utype/jsonc/json_object.h"/>
+          <File Name="framework/pub/utype/jsonc/json_object_iterator.c"/>
+          <File Name="framework/pub/utype/jsonc/json_object_iterator.h"/>
+          <File Name="framework/pub/utype/jsonc/json_object_private.h"/>
+          <File Name="framework/pub/utype/jsonc/json_tokener.c"/>
+          <File Name="framework/pub/utype/jsonc/json_tokener.h"/>
+          <File Name="framework/pub/utype/jsonc/json_util.c"/>
+          <File Name="framework/pub/utype/jsonc/json_util.h"/>
+          <File Name="framework/pub/utype/jsonc/linkhash.c"/>
+          <File Name="framework/pub/utype/jsonc/linkhash.h"/>
+          <File Name="framework/pub/utype/jsonc/Makefile"/>
+          <File Name="framework/pub/utype/jsonc/printbuf.c"/>
+          <File Name="framework/pub/utype/jsonc/printbuf.h"/>
+        </VirtualDirectory>
+        <File Name="framework/pub/utype/jsontest.cpp"/>
+        <File Name="framework/pub/utype/makefile"/>
+        <File Name="framework/pub/utype/t1.cpp"/>
+        <File Name="framework/pub/utype/t2.cpp"/>
+        <File Name="framework/pub/utype/utype.cpp"/>
+        <File Name="framework/pub/utype/utype.h"/>
+        <File Name="framework/pub/utype/utypetst.cpp"/>
+        <File Name="framework/pub/utype/utype_json.cpp"/>
+        <File Name="framework/pub/utype/xs.cpp"/>
+        <File Name="framework/pub/utype/xs.h"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="zlib">
+        <File Name="framework/pub/zlib/adler32.c"/>
+        <File Name="framework/pub/zlib/compress.c"/>
+        <File Name="framework/pub/zlib/crc32.c"/>
+        <File Name="framework/pub/zlib/crc32.h"/>
+        <File Name="framework/pub/zlib/deflate.c"/>
+        <File Name="framework/pub/zlib/deflate.h"/>
+        <File Name="framework/pub/zlib/example.c"/>
+        <File Name="framework/pub/zlib/gzio.c"/>
+        <File Name="framework/pub/zlib/infback.c"/>
+        <File Name="framework/pub/zlib/inffast.c"/>
+        <File Name="framework/pub/zlib/inffast.h"/>
+        <File Name="framework/pub/zlib/inffixed.h"/>
+        <File Name="framework/pub/zlib/inflate.c"/>
+        <File Name="framework/pub/zlib/inflate.h"/>
+        <File Name="framework/pub/zlib/inftrees.c"/>
+        <File Name="framework/pub/zlib/inftrees.h"/>
+        <File Name="framework/pub/zlib/makefile"/>
+        <File Name="framework/pub/zlib/minigzip.c"/>
+        <File Name="framework/pub/zlib/trees.c"/>
+        <File Name="framework/pub/zlib/trees.h"/>
+        <File Name="framework/pub/zlib/uncompr.c"/>
+        <File Name="framework/pub/zlib/zconf.h"/>
+        <File Name="framework/pub/zlib/zconf.in.h"/>
+        <File Name="framework/pub/zlib/zlib.h"/>
+        <File Name="framework/pub/zlib/zutil.c"/>
+        <File Name="framework/pub/zlib/zutil.h"/>
+      </VirtualDirectory>
+    </VirtualDirectory>
+    <VirtualDirectory Name="test_src">
+      <File Name="framework/test_src/mytest.sql"/>
+      <File Name="framework/test_src/r.sh"/>
+      <File Name="framework/test_src/RRouteInfo.cpp"/>
+    </VirtualDirectory>
+    <VirtualDirectory Name="tools">
+      <File Name="framework/tools/abc"/>
+      <File Name="framework/tools/abcnew"/>
+      <File Name="framework/tools/allmk"/>
+      <File Name="framework/tools/bcp.mk"/>
+      <File Name="framework/tools/bcpmk"/>
+      <File Name="framework/tools/bp.mk"/>
+      <File Name="framework/tools/bpmk"/>
+      <File Name="framework/tools/env.mk"/>
+      <File Name="framework/tools/env.mk.mk"/>
+      <File Name="framework/tools/env.mk.new"/>
+      <File Name="framework/tools/envs.mk"/>
+      <File Name="framework/tools/libfile"/>
+      <VirtualDirectory Name="NGDBINFOGET">
+        <File Name="framework/tools/NGDBINFOGET/Encrypt.h"/>
+        <File Name="framework/tools/NGDBINFOGET/libencrypt"/>
+        <File Name="framework/tools/NGDBINFOGET/libencrypt.cpp"/>
+        <File Name="framework/tools/NGDBINFOGET/makefile"/>
+        <File Name="framework/tools/NGDBINFOGET/NGDBINFOGET.cpp"/>
+      </VirtualDirectory>
+      <File Name="framework/tools/order.mk"/>
+      <VirtualDirectory Name="src">
+        <File Name="framework/tools/src/abc.cpp"/>
+        <File Name="framework/tools/src/ansysql.cpp"/>
+        <File Name="framework/tools/src/cfg.cpp"/>
+        <File Name="framework/tools/src/cl32.c"/>
+        <File Name="framework/tools/src/clutName.cpp"/>
+        <File Name="framework/tools/src/clxml.c"/>
+        <File Name="framework/tools/src/desende.cpp"/>
+        <File Name="framework/tools/src/encrypt.c"/>
+        <File Name="framework/tools/src/irexec.c"/>
+        <File Name="framework/tools/src/makefile"/>
+        <File Name="framework/tools/src/s_public.c"/>
+        <File Name="framework/tools/src/s_public_DelShm.c"/>
+        <File Name="framework/tools/src/s_public_GetMemAccept.c"/>
+        <File Name="framework/tools/src/s_public_GetPasswd.c"/>
+        <File Name="framework/tools/src/s_public_GetRedo.c"/>
+        <File Name="framework/tools/src/s_public_GetShm.c"/>
+        <File Name="framework/tools/src/s_public_InitShm.c"/>
+      </VirtualDirectory>
+      <File Name="framework/tools/svc.mk"/>
+      <File Name="framework/tools/svc1.mk"/>
+      <File Name="framework/tools/tf"/>
+      <File Name="framework/tools/tuxmake"/>
+      <File Name="framework/tools/tuxmakecrmcb"/>
+      <File Name="framework/tools/tuxmk"/>
+      <File Name="framework/tools/upso.py"/>
+    </VirtualDirectory>
+  </VirtualDirectory>
+  <VirtualDirectory Name="py">
+    <File Name="py/server1.py"/>
+    <File Name="py/tablecopy_incr.bak.py"/>
+    <File Name="py/tblcp.py"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="sh">
+    <File Name="sh/cleanlog.sh"/>
+    <File Name="sh/clean_qms"/>
+    <File Name="sh/cpmk"/>
+    <File Name="sh/cppcompile.sh"/>
+    <File Name="sh/cppcompileforexe.sh"/>
+    <VirtualDirectory Name="cppcompile_file">
+      <VirtualDirectory Name="cppcompile">
+        <File Name="sh/cppcompile_file/cppcompile/a.cpp"/>
+        <File Name="sh/cppcompile_file/cppcompile/a.sh"/>
+        <File Name="sh/cppcompile_file/cppcompile/cppcompile.cpp"/>
+        <File Name="sh/cppcompile_file/cppcompile/cppcompile.cpp.zhengxg"/>
+        <File Name="sh/cppcompile_file/cppcompile/cppcompile.h"/>
+        <File Name="sh/cppcompile_file/cppcompile/cppcompile.sh"/>
+        <File Name="sh/cppcompile_file/cppcompile/EscFuncFile.txt"/>
+        <File Name="sh/cppcompile_file/cppcompile/makefile"/>
+        <File Name="sh/cppcompile_file/cppcompile/otlv4.h"/>
+        <File Name="sh/cppcompile_file/cppcompile/test_makefile"/>
+        <File Name="sh/cppcompile_file/cppcompile/tt.cpp"/>
+      </VirtualDirectory>
+      <File Name="sh/cppcompile_file/get_lib_str.c"/>
+    </VirtualDirectory>
+    <File Name="sh/cpsmake.sh"/>
+    <File Name="sh/depmk"/>
+    <File Name="sh/emk"/>
+    <File Name="sh/EscFuncFile.txt"/>
+    <File Name="sh/get_lib_str"/>
+    <File Name="sh/killer"/>
+    <File Name="sh/makeall"/>
+    <VirtualDirectory Name="make_bp">
+      <File Name="sh/make_bp/list_bp1"/>
+      <File Name="sh/make_bp/list_bp2"/>
+      <File Name="sh/make_bp/make_bp1.sh"/>
+      <File Name="sh/make_bp/make_bp2.sh"/>
+      <File Name="sh/make_bp/nohup_bp.sh"/>
+    </VirtualDirectory>
+    <VirtualDirectory Name="make_order">
+      <File Name="sh/make_order/make_all.sh"/>
+      <File Name="sh/make_order/make_serv.sh"/>
+      <File Name="sh/make_order/nohup_order.sh"/>
+    </VirtualDirectory>
+    <VirtualDirectory Name="make_pub">
+      <File Name="sh/make_pub/make_pub.sh"/>
+      <File Name="sh/make_pub/nohup_pub.sh"/>
+    </VirtualDirectory>
+    <VirtualDirectory Name="make_public">
+      <File Name="sh/make_public/list2"/>
+      <File Name="sh/make_public/list_public"/>
+      <File Name="sh/make_public/make2.sh"/>
+      <File Name="sh/make_public/make_public.sh"/>
+      <File Name="sh/make_public/nohup_public.sh"/>
+    </VirtualDirectory>
+    <VirtualDirectory Name="make_server">
+      <File Name="sh/make_server/list_server"/>
+      <File Name="sh/make_server/make_server.sh"/>
+      <File Name="sh/make_server/nohup_serv.sh"/>
+    </VirtualDirectory>
+    <File Name="sh/oltest.sh"/>
+    <File Name="sh/relfile"/>
+    <File Name="sh/smk"/>
+    <File Name="sh/start_tux"/>
+    <File Name="sh/stop_tux"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="src">
+    <VirtualDirectory Name="2105">
+      <File Name="src/2105/bc.cpp"/>
+      <File Name="src/2105/crypt_data.sql"/>
+      <File Name="src/2105/CT_CUSTSPECIALLIST_INFO.sql"/>
+      <File Name="src/2105/ct_Cust_info.sql"/>
+      <File Name="src/2105/CT_CUST_INFO_INSERT.sql"/>
+      <File Name="src/2105/ct_GrpCust_info.sql"/>
+      <File Name="src/2105/CT_GRPCUST_INFO_INSERT.sql"/>
+      <File Name="src/2105/decrypt_data_dcustdoc.sql"/>
+      <File Name="src/2105/encrypt_data_dcustdoc.sql"/>
+      <File Name="src/2105/makefile"/>
+      <File Name="src/2105/p2105Cfm.cpp"/>
+      <File Name="src/2105/server.cpp"/>
+      <File Name="src/2105/test.txt"/>
+    </VirtualDirectory>
+    <File Name="src/c.sh"/>
+    <File Name="src/cc.sh"/>
+    <File Name="src/cDual.sql"/>
+    <File Name="src/cQDual.cpp"/>
+    <File Name="src/cQTestUsr.sql"/>
+    <File Name="src/cQUserInfoByPhoneNum.cpp"/>
+    <File Name="src/cQUserInfoByPhoneNum.sql"/>
+    <File Name="src/cTest1.cpp"/>
+    <File Name="src/cTest1.sql"/>
+    <File Name="src/env.sh"/>
+    <File Name="src/g.sh"/>
+    <File Name="src/imp.log"/>
+    <File Name="src/imp.tar.bz2"/>
+    <File Name="src/logimp.py"/>
+    <File Name="src/makefile"/>
+    <File Name="src/MyTest.cpp"/>
+    <File Name="src/pCustInfoByUrphno.cpp"/>
+    <File Name="src/pDynSvc.cpp"/>
+    <File Name="src/RDynSvc.cpp"/>
+    <File Name="src/readme.txt"/>
+    <File Name="src/RTest1.cpp"/>
+    <File Name="src/RTest1.dep"/>
+    <File Name="src/RTest2.cpp"/>
+    <File Name="src/RTest3.cpp"/>
+    <File Name="src/RTest3.dep"/>
+    <VirtualDirectory Name="svrcfg">
+      <File Name="src/svrcfg/makeserver.mk"/>
+      <File Name="src/svrcfg/makeserver.py"/>
+      <File Name="src/svrcfg/readme.txt"/>
+      <File Name="src/svrcfg/RTest1.yaml"/>
+      <File Name="src/svrcfg/RTest4.yaml"/>
+      <VirtualDirectory Name="yaml">
+        <File Name="src/svrcfg/yaml/composer.py"/>
+        <File Name="src/svrcfg/yaml/constructor.py"/>
+        <File Name="src/svrcfg/yaml/cyaml.py"/>
+        <File Name="src/svrcfg/yaml/dumper.py"/>
+        <File Name="src/svrcfg/yaml/emitter.py"/>
+        <File Name="src/svrcfg/yaml/error.py"/>
+        <File Name="src/svrcfg/yaml/events.py"/>
+        <File Name="src/svrcfg/yaml/loader.py"/>
+        <File Name="src/svrcfg/yaml/nodes.py"/>
+        <File Name="src/svrcfg/yaml/parser.py"/>
+        <File Name="src/svrcfg/yaml/reader.py"/>
+        <File Name="src/svrcfg/yaml/representer.py"/>
+        <File Name="src/svrcfg/yaml/resolver.py"/>
+        <File Name="src/svrcfg/yaml/scanner.py"/>
+        <File Name="src/svrcfg/yaml/serializer.py"/>
+        <File Name="src/svrcfg/yaml/tokens.py"/>
+        <File Name="src/svrcfg/yaml/__init__.py"/>
+      </VirtualDirectory>
+    </VirtualDirectory>
+    <File Name="src/qTest1.cpp"/>
+    <File Name="src/simpserv.c"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="test">
+    <File Name="test/ConvertEmergSwitch_Func.sh"/>
+    <File Name="test/cpptest.cpp"/>
+    <File Name="test/makefile"/>
+    <File Name="test/pjson.c"/>
+    <File Name="test/RRouteInfo.cpp"/>
+    <File Name="test/Rrtinfo.cpp"/>
+    <File Name="test/rtest.cpp"/>
+    <File Name="test/rule_unit.cpp"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="tns">
+    <File Name="tns/tnsnames.ora"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="docs">
+    <File Name="changelog.txt"/>
+    <File Name="csf_sc.mk"/>
+    <File Name="csf_sc.txt"/>
+    <File Name="install.txt"/>
+  </VirtualDirectory>
+</CodeLite_Project>

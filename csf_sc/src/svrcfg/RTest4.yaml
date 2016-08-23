@@ -1,0 +1,20 @@
+# Warning: do not use <tab> in content, and not use none-ascii content without utf-8 coding file
+ 
+SERVICE:
+ #servicename  bpname    DBLabel     ConnectType
+
+ - sTestx     cTest1    LABELDBCHANGEALL 1
+
+LIBS:
+ - -ltestbp2
+
+#clxml sQDual '{}'
+#clxml sDynSvc '{"SVC_NAME":"d110610"}'
+#clxml sDynSvc '{"SVC_NAME":"d11041", "OBJECT_ID":"BA4", "OP_CODES":"1106"}'
+#clxml sDynSvc '{"ROOT":{"HEADER":{"DB_ID":"a1", "POOL_ID":"12"}, "BODY":{"SVC_NAME":"d11041", "OBJECT_ID":"BA4", "OP_CODES":"1106"}}}'
+
+EXTRA:  #in content each line must start with <space> 
+>
+  
+  utype* cTest1(const utype *inparam, TCtrlInfo *ptCtrlInfo);
+

@@ -1,0 +1,9 @@
+echo ===================================================================
+mv  bdmconfig  bdmconfig.`date "+%m%d%y"`
+echo "The current  bdmconfig file was renamed as  bdmconfig.`date "+%m%d%y"`."
+
+cp DMCONFIG DMCONFIG.`date "+%m%d%y"`
+echo "The current DMCONFIG file was copied as DMCONFIG.`date "+%m%d%y"`."
+dmloadcf -y DMCONFIG
+echo "The new  bdmconfig file was created from DMCONFIG."
+echo ===================================================================

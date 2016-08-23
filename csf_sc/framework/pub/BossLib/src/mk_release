@@ -1,0 +1,41 @@
+#!/bin/sh
+.SUFFIXES:.pc .cpp .cc .c .o
+
+ORADIR=$(ORACLE_HOME)
+WORKDIR=$(HOME)/run/public/BossLib
+BINDIR=$(WORKDIR)/bin
+LIBDIR=$(WORKDIR)/lib
+
+ORAINCL1 = $(ORADIR)/rdbms/demo
+ORAINCL2 = $(ORADIR)/rdbms/public
+ORAINCL3 = $(ORADIR)/precomp/public
+ORALIBS = $(ORADIR)/lib -lclntsh
+TUXINCL = $(TUXDIR)/include
+TUXLIBS = $(TUXDIR)/lib -ltux -lbuft -lfml -lfml32 -lwsc
+
+INCLUDE = -I$(WORKDIR)/include -I$(TUXINCL) -I$(ORAINCL1) -I$(ORAINCL2) -I$(ORAINCL3) -I/usr/include -I/usr/include/sys -I/usr/vacpp/include
+CFLAGS = -g
+
+#CC=aCC +DD64 -AA
+CC=xlC -q64 -bmaxdata:0x80000000000 -g -DPLATFORM_TYPE=AIX  -DDBUG_OFF=ON
+
+PROCPLSFLAGS=sqlcheck=full code=cpp DYNAMIC=ANSI USERID=dbcustadm/abc123##@boss20 SQLCHECK=SEMANTICS LINE=true
+PROCINCL = include=$(WORKDIR)/include include=$(TUXINCL) include=$(ORAINCL1) include=$(ORAINCL2) include=$(ORAINCL3) include=/usr/include include=/usr/include/sys include=/usr/vacpp/include
+PRECOMP=$(ORADIR)/bin/proc
+
+all: libBossSys.a clean
+
+OBJ1=CLBase.o CLRecordSet.o CLCommand.o db.o CLDbDriver.o CLDbug.o CLDriver.o CLError.o CLException.o CLFile.o CLLayer.o CLMalloc.o CLRule.o CLShmDriver.o CLString.o CLRight.o CLDomain.o unittype.o
+
+libBossSys.a:$(OBJ1)
+	ar -X64 -rv $@ $?
+	mv $@ $(LIBDIR)
+
+######################
+.pc.cpp:
+	$(PRECOMP) $(PROCPLSFLAGS) $(PROCINCL) iname=$< oname=$(<:.pc=.cpp)
+
+.cpp.o:
+	$(CC) $(INCLUDE) $(CFLAGS)  -c $*.cpp
+clean:
+	rm -f $(BINDIR)/core *.o *.lis

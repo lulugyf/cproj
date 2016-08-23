@@ -1,0 +1,1 @@
+include $(HOME)/run/framework/tools/env.mk.new lib.so:.o -o .o -L/crmca/run/solib

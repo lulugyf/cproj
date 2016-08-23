@@ -1,0 +1,80 @@
+send client msg is:[HTTP/1.1 200 OK
+Connection: close
+Date: Tue, 08 Jan 2013 10:49:40 GMT
+Transfer-Encoding: chunked
+Content-Type: text/xml; charset=utf-8
+X-Powered-By: Servlet/2.5 JSP/2.1
+
+0301
+<?xml version='1.0' encoding='utf-8'?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Body><ns:callServiceResponse xmlns:ns="http://ws.sitech.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><ns:return>&lt;?xml version="1.0" encoding="GBK"?&gt;
+&lt;ROOT&gt;&lt;RETURN_CODE type="long"&gt;303000010&lt;/RETURN_CODE&gt;&lt;RETURN_MSG type="string"&gt;参数存取错误，请联系系统管理员！&lt;/RETURN_MSG&gt;&lt;USER_MSG type="string"&gt;参数存取错误，请联系系统管理员！&lt;/USER_MSG&gt;&lt;DETAIL_MSG type="string"&gt;utGetStr错误,[SVC_NAME]元素不存在！&lt;/DETAIL_MSG&gt;&lt;PROMPT_MSG type="string"/&gt;&lt;/ROOT&gt;</ns:return></ns:callServiceResponse></soapenv:Body></soapenv:Envelope>
+0000
+
+]
+send client msg is:[HTTP/1.1 200 OK
+Connection: close
+Date: Tue, 08 Jan 2013 10:49:40 GMT
+Transfer-Encoding: chunked
+Content-Type: text/xml; charset=utf-8
+X-Powered-By: Servlet/2.5 JSP/2.1
+
+0301
+<?xml version='1.0' encoding='utf-8'?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Body><ns:callServiceResponse xmlns:ns="http://ws.sitech.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><ns:return>&lt;?xml version="1.0" encoding="GBK"?&gt;
+&lt;ROOT&gt;&lt;RETURN_CODE type="long"&gt;303000010&lt;/RETURN_CODE&gt;&lt;RETURN_MSG type="string"&gt;参数存取错误，请联系系统管理员！&lt;/RETURN_MSG&gt;&lt;USER_MSG type="string"&gt;参数存取错误，请联系系统管理员！&lt;/USER_MSG&gt;&lt;DETAIL_MSG type="string"&gt;utGetStr错误,[SVC_NAME]元素不存在！&lt;/DETAIL_MSG&gt;&lt;PROMPT_MSG type="string"/&gt;&lt;/ROOT&gt;</ns:return></ns:callServiceResponse></soapenv:Body></soapenv:Envelope>
+0000
+
+]
+send client msg is:[HTTP/1.1 200 OK
+Connection: close
+Date: Tue, 08 Jan 2013 10:49:40 GMT
+Transfer-Encoding: chunked
+Content-Type: text/xml; charset=utf-8
+X-Powered-By: Servlet/2.5 JSP/2.1
+
+0301
+<?xml version='1.0' encoding='utf-8'?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Body><ns:callServiceResponse xmlns:ns="http://ws.sitech.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><ns:return>&lt;?xml version="1.0" encoding="GBK"?&gt;
+&lt;ROOT&gt;&lt;RETURN_CODE type="long"&gt;303000010&lt;/RETURN_CODE&gt;&lt;RETURN_MSG type="string"&gt;参数存取错误，请联系系统管理员！&lt;/RETURN_MSG&gt;&lt;USER_MSG type="string"&gt;参数存取错误，请联系系统管理员！&lt;/USER_MSG&gt;&lt;DETAIL_MSG type="string"&gt;utGetStr错误,[SVC_NAME]元素不存在！&lt;/DETAIL_MSG&gt;&lt;PROMPT_MSG type="string"/&gt;&lt;/ROOT&gt;</ns:return></ns:callServiceResponse></soapenv:Body></soapenv:Envelope>
+0000
+
+]
+<<<<<<send to [4] [963]bytes,strlen(msg)=[963]<<<HTTP/1.1 200 OK
+Connection: close
+Date: Tue, 08 Jan 2013 10:49:40 GMT
+Transfer-Encoding: chunked
+Content-Type: text/xml; charset=utf-8
+X-Powered-By: Servlet/2.5 JSP/2.1
+
+0301
+<?xml version='1.0' encoding='utf-8'?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Body><ns:callServiceResponse xmlns:ns="http://ws.sitech.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><ns:return>&lt;?xml version="1.0" encoding="GBK"?&gt;
+&lt;ROOT&gt;&lt;RETURN_CODE type="long"&gt;303000010&lt;/RETURN_CODE&gt;&lt;RETURN_MSG type="string"&gt;参数存取错误，请联系系统管理员！&lt;/RETURN_MSG&gt;&lt;USER_MSG type="string"&gt;参数存取错误，请联系系统管理员！&lt;/USER_MSG&gt;&lt;DETAIL_MSG type="string"&gt;utGetStr错误,[SVC_NAME]元素不存在！&lt;/DETAIL_MSG&gt;&lt;PROMPT_MSG type="string"/&gt;&lt;/ROOT&gt;</ns:return></ns:callServiceResponse></soapenv:Body></soapenv:Envelope>
+0000
+
+
+send client msg is:[HTTP/1.1 200 OK
+Connection: close
+Date: Tue, 08 Jan 2013 10:49:40 GMT
+Transfer-Encoding: chunked
+Content-Type: text/xml; charset=utf-8
+X-Powered-By: Servlet/2.5 JSP/2.1
+
+0301
+<?xml version='1.0' encoding='utf-8'?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Body><ns:callServiceResponse xmlns:ns="http://ws.sitech.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><ns:return>&lt;?xml version="1.0" encoding="GBK"?&gt;
+&lt;ROOT&gt;&lt;RETURN_CODE type="long"&gt;303000010&lt;/RETURN_CODE&gt;&lt;RETURN_MSG type="string"&gt;参数存取错误，请联系系统管理员！&lt;/RETURN_MSG&gt;&lt;USER_MSG type="string"&gt;参数存取错误，请联系系统管理员！&lt;/USER_MSG&gt;&lt;DETAIL_MSG type="string"&gt;utGetStr错误,[SVC_NAME]元素不存在！&lt;/DETAIL_MSG&gt;&lt;PROMPT_MSG type="string"/&gt;&lt;/ROOT&gt;</ns:return></ns:callServiceResponse></soapenv:Body></soapenv:Envelope>
+0000
+
+]
+connect: Address already in use
+setsockopt SO_REUSEADDR ret:[0]
+send client msg is:[HTTP/1.1 200 OK
+Connection: close
+Date: Tue, 08 Jan 2013 10:49:40 GMT
+Transfer-Encoding: chunked
+Content-Type: text/xml; charset=utf-8
+X-Powered-By: Servlet/2.5 JSP/2.1
+
+0301
+<?xml version='1.0' encoding='utf-8'?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Body><ns:callServiceResponse xmlns:ns="http://ws.sitech.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><ns:return>&lt;?xml version="1.0" encoding="GBK"?&gt;
+&lt;ROOT&gt;&lt;RETURN_CODE type="long"&gt;303000010&lt;/RETURN_CODE&gt;&lt;RETURN_MSG type="string"&gt;参数存取错误，请联系系统管理员！&lt;/RETURN_MSG&gt;&lt;USER_MSG type="string"&gt;参数存取错误，请联系系统管理员！&lt;/USER_MSG&gt;&lt;DETAIL_MSG type="string"&gt;utGetStr错误,[SVC_NAME]元素不存在！&lt;/DETAIL_MSG&gt;&lt;PROMPT_MSG type="string"/&gt;&lt;/ROOT&gt;</ns:return></ns:callServiceResponse></soapenv:Body></soapenv:Envelope>
+0000
+
+]

@@ -1,0 +1,43 @@
+. /$HOME/.profile
+SID=`NGDBINFOGET DBCHANGE DBSERV`
+DBNAME=`NGDBINFOGET DBCHANGE DBUSER`
+DBPWD=`NGDBINFOGET DBCHANGE DBPASSWD`
+if [ "$#" != "1" ] 
+then
+        echo "脚本的用法如下:"
+        echo "usage: mkdep cQTimeAgeLimit.cpp  表示编译cQTimeAgeLimit.cpp依赖的动态库"
+else
+        mydate=`date +%Y%m%d%H%M%S`
+        myfile=$1"_"$mydate
+        writefile=$1$mydate
+        cpp_name_val=$1
+        
+        sh tree2.sh $1>>$writefile
+sqlplus -s $DBNAME/$DBPWD@$SID<<!
+delete from CP_CPMAKE_REL where cpp_name='$cpp_name_val';
+delete from CP_RMAKE_REL where cpp_name='$cpp_name_val';
+commit;
+!
+        cat $writefile | while read line 
+        do
+                so_name=`echo $line|grep "\."|grep -v ^$`
+                i=`echo $line | grep "\." | wc -l`
+                if [ $i -gt 0 ]
+                then
+                        strline=`echo $line | sed "s/\" \"//g"|sed "s/.so/.cpp/g" | awk '{print substr($0, 4)}'`
+                        path=`find $HOME/run/framework/src/ -name "$strline"`
+sqlplus -s $DBNAME/$DBPWD@$SID<<!
+insert into CP_CPMAKE_REL values('$cpp_name_val','cpmk $path',trim('$so_name'));
+commit;
+!
+                fi
+        done
+sqlplus -s $DBNAME/$DBPWD@$SID<<!
+insert into CP_RMAKE_REL select distinct '$cpp_name_val',a.EXEC_NAME from CP_EXECSO_RELA a,CP_CPMAKE_REL b where a.so_name=b.SO_NAME and b.cpp_name='$cpp_name_val';
+commit;
+!
+        
+        rm -rf $writefile
+        rm -rf $myfile
+fi
+

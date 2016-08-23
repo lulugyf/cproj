@@ -1,0 +1,2 @@
+update sRule set rule_type=4 where rule_code = any(10000, 10001)
+/

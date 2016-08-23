@@ -1,0 +1,9 @@
+echo ===================================================================
+mv tuxconfig tuxconfig.`date "+%m%d%y"`
+echo "The current tuxconfig file was renamed as tuxconfig.`date "+%m%d%y"`."
+
+cp UBBCONFIG UBBCONFIG.`date "+%m%d%y"`
+echo "The current UBBCONFIG file was copied as UBBCONFIG.`date "+%m%d%y"`."
+tmloadcf -y UBBCONFIG
+echo "The new tuxconfig file was created from UBBCONFIG."
+echo ===================================================================

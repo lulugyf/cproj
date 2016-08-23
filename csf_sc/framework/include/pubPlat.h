@@ -1,0 +1,21 @@
+#ifndef _PUBPLAT_H
+#define _PUBPLAT_H 
+#if PLATFORM_TYPET == PLATFORM_TYPE=PLATFORM_TYPE_AIX
+#include <fcntl.h>
+#else
+#include <sys/fcntl.h>
+#endif
+
+
+
+#if _PROVINCE_CODE_TYPE == PROVINCE_CODE_TYPE=PROVINCE_CODE_SX
+#define PROVINCE_CODE "10011"
+#elif _PROVINCE_CODE_TYPE == PROVINCE_CODE_TYPE=PROVINCE_CODE_SC
+#define PROVINCE_CODE "10008"
+#else
+#define PROVINCE_CODE "10017"
+#endif
+
+#endif
+
+

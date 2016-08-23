@@ -1,0 +1,8 @@
+include $(HOME)/run/framework/tools/env.mk
+
+a:cipher
+
+OBJS=  cipher.o
+cipher:$(OBJS)  
+	$(CPP_COMP) $(CPPFLAGS) $(INCLUDE) $(DYNLIBFLAGS) -o $@ $(OBJS) -L$(BORDER_SO_LIB) -lrule  -L$(TUX_LIB)
+#	mv $@ $(WORK_LIB_DIR)  

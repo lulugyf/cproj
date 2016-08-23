@@ -1,0 +1,60 @@
+####################################################
+#	(c) 2007 BEA Systems, Inc. All Rights Reserved.
+#
+#	ident	"@(#) TuxWS/samples/simpapp/tux/simpapp.ubb.template	$Revision: 1.1 $"
+#
+#	Skeleton UBBCONFIG file for the TUXEDO SALT 2.0 secsapp Application.
+#	Replace the @FIELD@ items with the appropriate values.
+
+####################################################
+#
+*RESOURCES
+IPCKEY          131452
+DOMAINID        simpapp
+MASTER          simple
+MAXACCESSERS    100
+MAXSERVERS      50
+MAXSERVICES     100
+MODEL           SHM
+LDBAL           N
+
+
+####################################################
+#
+*MACHINES
+"BssDemo"     LMID=simple
+                TUXDIR="/tuxedo11g/tuxedo11gR1"
+                APPDIR="/crmpdpp/hcai/work/salt/simpapp_salt/work"
+                TUXCONFIG="/crmpdpp/hcai/work/salt/simpapp_salt/work/tuxconfig"
+
+                #
+                MAXWSCLIENTS=5
+
+
+
+
+####################################################
+#
+*GROUPS
+GROUP1
+        LMID=simple GRPNO=1 OPENINFO=NONE
+
+
+####################################################
+#
+*SERVERS
+DEFAULT:
+            CLOPT="-A"
+
+simpserv	SRVGRP=GROUP1 SRVID=1
+TMMETADATA  SRVGRP=GROUP1 SRVID=2
+            CLOPT="-A -- -f mdr_simpapp.repos"
+GWWS        SRVGRP=GROUP1 SRVID=3
+            CLOPT="-A -- -iGWWS1"
+
+
+####################################################
+#
+*SERVICES
+TOUPPER
+stest

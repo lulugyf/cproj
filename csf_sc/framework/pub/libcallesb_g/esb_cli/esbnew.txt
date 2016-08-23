@@ -1,0 +1,15 @@
+<ROOT>
+	<HEADER>
+		<POOL_ID type="string">11</POOL_ID>
+		<DB_ID type="string"/>
+		<ENV_ID type="string"/>
+		<ROUTING>
+			<ROUTE_KEY type="string"/>
+			<ROUTE_VALUE type="string"/>
+		</ROUTING>
+	</HEADER>
+	<BODY>
+		<PHONE_NO type="string">15799881753</PHONE_NO>
+        <TMP type="string"> ####жпнд╡Бйт####</TMP>
+	</BODY>
+</ROOT>

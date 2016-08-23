@@ -1,0 +1,207 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="." xmlns:cat="." elementFormDefault="qualified">
+  <xs:annotation>
+    <xs:documentation xml:lang="en">
+			program schema for boss2.0.
+			Copyright 2003.11.20 www.si-tech.com.cn All rights reserved.
+		</xs:documentation>
+  </xs:annotation>
+  <xs:simpleType name="classNameType">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="40" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="orderType">
+    <xs:restriction base="xs:integer">
+      <xs:maxLength value="8" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="classNoType">
+    <xs:restriction base="xs:int">
+      <xs:maxLength value="10" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="dataType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="xs:string" />
+      <xs:enumeration value="xs:int" />
+      <xs:enumeration value="xs:double" />
+      <xs:enumeration value="complex" />
+      <xs:enumeration value="xs:datetime" />
+      <xs:enumeration value="xs:long" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="readOnlyType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="T" />
+      <xs:enumeration value="F" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="isInParamType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="T" />
+      <xs:enumeration value="F" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="isDispRelaType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="T" />
+      <xs:enumeration value="F" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="inParamCtrlType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="0" />
+      <xs:enumeration value="1" />
+      <xs:enumeration value="2" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="displayType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="text" />
+      <xs:enumeration value="select" />
+      <xs:enumeration value="checkbox" />
+      <xs:enumeration value="radio" />
+      <xs:enumeration value="tabname" />
+      <xs:enumeration value="table" />
+      <xs:enumeration value="label" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="paramValueType">
+    <xs:attribute name="value" type="xs:string" use="required" />
+    <xs:attribute name="order" type="cat:orderType" use="optional" />
+  </xs:complexType>
+  <xs:complexType name="codeValueType">
+    <xs:attribute name="code" type="xs:string" use="required" />
+    <xs:attribute name="name" type="xs:string" use="required" />
+    <xs:attribute name="order" type="cat:orderType" use="required" />
+  </xs:complexType>
+  <xs:complexType name="relaClassNoType">
+    <xs:attribute name="classNo" type="cat:classNoType" use="required" />
+    <xs:attribute name="order" type="cat:orderType" use="required" />
+  </xs:complexType>
+  <!--图像类型-->
+  <xs:simpleType name="graphTypeType">
+    <xs:restriction base="xs:string">
+      <!--柱状图-->
+      <xs:enumeration value="ColumnClustered3D" />
+      <!--条状图-->
+      <xs:enumeration value="BarClustered3D" />
+    </xs:restriction>
+  </xs:simpleType>
+  <!--图像深度比值-->
+  <xs:simpleType name="chartDepthType">
+    <xs:restriction base="xs:integer">
+      <xs:minInclusive value="0" />
+      <xs:maxInclusive value="500" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!--设置绘制图表值的取值方向-->
+  <xs:simpleType name="dimValueDirectionType">
+    <xs:restriction base="xs:string">
+      <!--按行取-->
+      <xs:enumeration value="0" />
+
+      <!--按列取-->
+      <xs:enumeration value="1" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="cat:dimValueType">
+    <!--图表的标题信息。-->
+    <xs:attribute name="value" type="xs:integer" use="required" />
+  </xs:complexType>
+  <xs:complexType name="graphInfoType">
+    <!--设置绘制图表的值。指定对应于classType.order的值序列。-->
+    <xs:sequence minOccurs="1" maxOccurs="unbounded">
+      <xs:element name="dimValue" type="cat:dimValueType" />
+    </xs:sequence>
+    <xs:attribute name="graphType" type="xs:graphTypeType" use="required" />
+    <xs:attribute name="chartDepth" type="xs:chartDepthType" use="required" />
+    <!--设置用作分类的值，在坐标轴刻度标签，指定对应于classType.order的值。-->
+    <xs:attribute name="dimCategories" type="xs:integer" use="required" />
+    <!--设置绘制图表值的取值方向，是取行，还是取列。-->
+    <xs:attribute name="dimValueDirection" type="cat:dimValueDirectionType" use="required" />
+    <!--图表的标题信息。-->
+    <xs:attribute name="graphTitleCaption" type="xs:string" use="required" />
+    <!--图表的数据起始位置。-->
+    <xs:attribute name="dataBeginPos" type="xs:interger" use="required" />
+    <!--图表的数据结束位置。-->
+    <xs:attribute name="dataEndPos" type="xs:interger" use="required" />
+    <!--图表的图形样式单。-->
+    <xs:attribute name="style" type="xs:string" use="required" />
+  </xs:complexType>
+  <xs:complexType name="classType">
+    <xs:sequence minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="paramValue" type="cat:paramValueType" />
+      <xs:element name="codeValue" type="cat:codeValueType" />
+      <xs:element name="relaClassNo" type="cat:relaClassNoType" />
+      <xs:element name="graphInfo" type="cat:graphInfoType" />
+      <xs:element name="class" type="cat:classType" />
+    </xs:sequence>
+    <xs:attribute name="classNo" type="cat:classNoType" use="required" />
+    <xs:attribute name="classCode" type="xs:int" use="required" />
+    <xs:attribute name="className" type="cat:classNameType" use="optional" />
+    <xs:attribute name="order" type="cat:orderType" use="optional" />
+    <xs:attribute name="dataType" type="cat:dataType" use="optional" />
+    <xs:attribute name="dataLength" type="xs:unsignedInt" use="optional" />
+    <xs:attribute name="readOnly" type="cat:readOnlyType" use="optional" />
+    <xs:attribute name="type" type="cat:displayType" use="optional" />
+    <xs:attribute name="isInParam" type="cat:isInParamType" use="optional" />
+    <xs:attribute name="inParamCtrl" type="cat:inParamCtrlType" use="optional" />
+    <xs:attribute name="ruleCode" type="xs:int" use="required" />
+    <xs:attribute name="rowCount" type="xs:int" use="required" />
+    <xs:attribute name="groupOrder" type="xs:int" use="optional" />
+    <xs:attribute name="colCount" type="xs:int" use="optional" />
+    <xs:attribute name="displayCtrl" type="xs:int" use="optional" />
+    <xs:attribute name="displayCol" type="xs:int" use="optional" />
+  </xs:complexType>
+  <xs:complexType name="paramsType">
+    <xs:sequence>
+      <xs:element name="classNo" type="cat:classType" />
+    </xs:sequence>
+    <xs:attribute name="rowCount" type="xs:int" use="required" />
+    <xs:attribute name="colCount" type="xs:int" use="optional" />
+  </xs:complexType>
+  <xs:simpleType name="opCodeType">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="5" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="funcNameType">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="30" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="relaFuncType">
+    <xs:sequence>
+      <xs:element name="classNo" type="cat:classType" />
+    </xs:sequence>
+    <xs:attribute name="opCode" type="cat:opCodeType" use="required" />
+    <xs:attribute name="funcName" type="cat:funcNameType" use="required" />
+    <xs:attribute name="type" type="cat:displayType" use="required" />
+    <xs:attribute name="order" type="cat:orderType" use="optional" />
+    <xs:attribute name="rowCount" type="xs:int" use="required" />
+    <xs:attribute name="colCount" type="xs:int" use="optional" />
+  </xs:complexType>
+  <xs:complexType name="relaFuncsType">
+    <xs:sequence>
+      <xs:element name="relaFunc" type="cat:relaFuncType" />
+    </xs:sequence>
+    <xs:attribute name="order" type="cat:orderType" use="optional" />
+  </xs:complexType>
+  <xs:element name="mainFunc">
+    <xs:complexType>
+      <xs:sequence minOccurs="1" maxOccurs="1">
+        <xs:element name="pubParams" type="cat:paramsType" minOccurs="0" maxOccurs="1" />
+        <xs:element name="inputParams" type="cat:paramsType" minOccurs="0" maxOccurs="1" />
+        <xs:element name="outputParams" type="cat:paramsType" minOccurs="0" maxOccurs="1" />
+        <xs:element name="relaFuncs" type="cat:relaFuncsType" minOccurs="0" maxOccurs="1" />
+      </xs:sequence>
+      <xs:attribute name="isDispRela" type="cat:isDispRelaType" use="optional" />
+      <xs:attribute name="opCode" type="cat:opCodeType" use="required" />
+      <xs:attribute name="funcName" type="cat:funcNameType" use="required" />
+      <xs:attribute name="type" use="required" type="cat:displayType" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

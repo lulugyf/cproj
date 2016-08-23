@@ -1,0 +1,37 @@
+framework/tools/env.mk  中需要有按OS的不同版本
+
+cd zlib && make a
+cd publog && make a
+cd libshm && make a
+cd libcfg && make a
+cd utype/jsonc && make a
+    修改 utype.h， 增加 #include <stdio.h>; #include <string.h>
+cd utype && make a
+cd libdes && make libDesMac.so
+    更新了 read_pwd.c
+cd libcipher && make a
+liblogutype
+liblogfunc
+libdbconn
+filter
+libpassutype
+rule
+libbusi
+libdbug
+libbase
+libsys
+   修改 CLThreadPool.h:361，   CLThread::ThreadExit((HTHREAD)(m_threadMap.GetValueAt(nIndex)));
+BossLib/src
+router
+BossTuxLib/src
+
+
+下载 xerces.tar.bz2
+下载 imdb.tar.bz2
+   
+
+
+find . -name "*.o" -exec rm {} \;
+find . -name "*.a" -exec rm {} \;
+find . -name "*.so" -exec rm {} \;
+

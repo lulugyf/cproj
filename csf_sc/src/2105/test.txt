@@ -1,0 +1,17 @@
+
+===========================
+svc.txt
+s2105AddCfm lib2105.so p2105AddCfm dbchange 0
+s2105DelCfm lib2105.so p2105DelCfm dbchange 0
+
+
+select * from CT_CUSTSPECIALLIST_INFO;
+select * from CT_CUSTSPECIALLIST_INFO_HIS;
+
+curl -d '{"BUSI_MODEL":{"CUST_ID":27404050765504, "LIST_TYPE":"1", "GROUP_ID":"1234"},
+"OPR_INFO":{ "LOGIN_ACCEPT":1234562, "LOGIN_NO":"abc", "OP_CODE":"2105", "OP_TIME":"201402170943"}
+}\n' 'http://172.21.1.36:8001/callservice?s2105AddCfm'
+
+curl -d '{"BUSI_MODEL":{"CUST_ID":27404050765504, "LIST_TYPE":"1", "GROUP_ID":"1234"},
+"OPR_INFO":{"LOGIN_ACCEPT":1234562, "LOGIN_NO":"abc", "OP_CODE":"2105", "OP_TIME":"201402170943"}
+}\n' 'http://172.21.1.36:8001/callservice?s2105DelCfm'

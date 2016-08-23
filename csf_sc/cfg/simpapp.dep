@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+	(c) 2007 BEA Systems, Inc. All Rights Reserved.
+	Copyright (c) 2007 BEA Systems, Inc.
+	All Rights Reserved.
+
+	THIS IS UNPUBLISHED PROPRIETARY SOURCE CODE OF
+	BEA Systems, Inc.
+	The copyright notice above does not evidence any
+	actual or intended publication of such source code.
+
+	ident	"@(#) TuxWS/samples/simpapp/tux/simpapp.dep.template	$Revision: 1.2 $"
+-->
+<Deployment xmlns="http://www.bea.com/Tuxedo/SALTDEPLOY/2007">
+	<WSDF>
+		<Import location="/crmpdpp/csf/run/cfg/simpapp.wsdf"></Import>
+		<!-- Example:
+				location="/home/me/salt/simpapp/work/simpapp.wsdf"   (Unix)
+				location="C:\home\me\salt\simpapp\work\simpapp.wsdf" (Win)
+		-->
+	</WSDF>
+	<WSGateway>
+		<GWInstance id="GWWS1">
+			<Inbound>
+				<Binding ref="simpapp:simpapp_Binding">
+					<Endpoint use="simpapp_GWWS1_HTTPPort"></Endpoint>
+				</Binding>
+			</Inbound>
+			<Properties>
+				<Property name="enableSOAPValidation" value="true"/>
+				<Property name="enableMultiEncoding" value="true"/>
+			</Properties>
+		</GWInstance>
+	</WSGateway>
+	<System></System>
+</Deployment>
+

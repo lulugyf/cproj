@@ -1,0 +1,8 @@
+if [ $# -ne 1 ];
+then
+        echo "**************edit by magang ****************"
+        echo "********tf RXXX.log*************"
+        echo "************edit by magang********************"
+        exit
+fi
+tail -500f $1

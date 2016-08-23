@@ -1,0 +1,125 @@
+-- 目标：入参PHONE_NO，如果表 test_usr_${ID_NO[-2:]} 表中有该PHONE_NO记录，则限制规则
+-- 测试特性： 规则sql支持分表
+
+insert into bs_servicerule_rel values('sruletest', 70001, 0);
+insert into bs_busirule_dict values(70001, 1, '测试规则支持分表', '分表取ID_NO最后2位');
+
+insert into bs_ruleinparam_rel values(70001, 12001, 'REQUEST_INFO.PHONE_NO', '');
+insert into bs_paramcode_dict values(12001, 'PHONE_NO', 5, 15, '用户号码');
+
+----下面两个参数是通过sql产生的， sql要用到的变量PHONE_NO需要先配置参数准备的
+insert into bs_ruleinparam_rel values(70001, 12002, 'ID_NO', 90001);
+insert into bs_paramcode_dict values(12002, 'ID_NO', 3, 14, '用户标识');
+insert into bs_ruleinparam_rel values(70001, 12003, 'YYYYMM', 90001);
+insert into bs_paramcode_dict values(12003, 'YYYYMM', 5, 6, '年月');
+
+----这个unit中， unit_name 固定为SQL时， 则unit_path为一个SQL， sql中可以产生多个变量
+insert into bs_busiunit_dict values(90001, 'SQL', 
+	'select ID_NO, to_char(sysdate, ''yyyymm'') YYYYMM from ur_user_info where phone_no=:PHONE_NO<char[41]>', '获取用户标识');
+
+insert into bs_rulefactorgroup_rel values(70001, 50001, 0);
+
+insert into bs_factorgroup_dict values(50001, '测试一个', 0);
+insert into bs_groupfactor_rel values(50001, 30001, 0);
+insert into bs_rulefactor_dict(factor_id, param_code, operator_id, value1, value2, factor_desc, param_note)
+ values(30001, 0, 10, 'select ''${YYYYMM}''||'' #{%Y%m%d}'' from test_usr_${ID_NO[-2:]} where phone_no=:PHONE_NO<char[40]>',
+ 0, '骚扰电话', 'desc');
+insert into bs_groupretmsg_info values(50001, 6666666, '');
+insert into bs_returnmsg_dict values(6666666, '表中不能有数据哦！！', 'filename', 'bp name', '建议信息', '提示信息');
+
+
+
+create table test_usr_60(phone_no char(15) , b int);
+insert into test_usr_60 values('13835013680', 1111);
+
+./rtest sruletest dbchangea1 '{"ROOT":{"REQUEST_INFO":{"PHONE_NO":"13835013680"}}}'
+
+value_type:
+    2: int
+    3: long
+    4: double
+    5: string
+
+operator_id:
+    0: ==
+    1: !=
+    2: >
+    3: <
+    4: >=
+    5: <=
+    6: between
+    7: like
+    8: in
+    9: not in
+    10: sql  if has result then return false
+    
+unit_id:   9????
+rule_id:   7????
+group_id:  5????
+factor_id: 3????
+param_code:1????
+
+
+
+
+
+
+
+
+
+
+
+./rtest sruletest dbchangea1 '{"ROOT":{"svc_name":"", "REQUEST_INFO":{"PHONE_NO":"13835013680"}}}'
+
+
+
+
+
+@@@@ 2013-4-28  
+业务规则验证服务测试数据， 中间参数支持从sql中获取
+
+insert into bs_busiunit_dict values(90001, 'SQL', 'select ID_NO, CUST_ID from ur_user_info where phone_no=:PHONE_NO<char[41]>', '获取用户标识')
+insert into bs_busiunit_dict values(90002, 'SQL', 'select to_char(sysdate, ''yyyymm'') YYYYMM from dual', '获取日期')
+insert into bs_ruleinparam_rel
+       70001, 11110002, 'CUST_ID', 90001
+       70001, 12001, 'REQUEST_INFO.PHONE_NO', ''
+       70001, 12002, 'ID_NO', 90001
+       70001, 12003, 'YYYYMM', 90002
+select * from bs_factorgroup_dict where group_id=50001
+insert into bs_factorgroup_dict values(50002, '第二个规则组', 0)
+insert into bs_groupretmsg_info values(50002, 777777, '')
+insert into bs_returnmsg_dict values(777777, 'CUST_ID > 999', 'filename', 'bp_name', 'cust_id>999 advice', 'cust_id>999 tips')
+
+
+insert into bs_rulefactorgroup_rel values(70001, 50002, 1)
+insert into bs_groupfactor_rel values(50002, 30002, 1)
+insert into bs_rulefactor_dict values(30002, 11110002, 2, '999', '0', '莫名堂', 'note');  CUST_ID > 999
+
+insert into bs_servicerule_rel values('sruletest', 70001, 0);
+insert into bs_busirule_dict values(70001, 1, '测试规则支持分表', '分表取ID_NO最后2位');
+
+
+./ruleck dbchangea1 '{"ROOT":{"svc_name":"sruletest", "REQUEST_INFO":{"PHONE_NO":"13835013680"}}}'
+./ruleck dbchangea1 '{"ROOT":{"svc_name":"sruletest", "REQUEST_INFO":{"PHONE_NO":"15803567820"}}}'
+
+
+-- 普通的业务规则测试
+--1. SQL
+-- 入参： REQUEST_INFO.PHONE_NO， SQL: select 1 from test_usr_60 where phone_no=:PHONE_NO
+-- 说明： 如果test_usr_60 表中存在该号码记录， 则被限制
+
+insert into bs_servicerule_rel values('sQDual', 70091, 0);
+insert into bs_busirule_dict values(70091, 1, '普通SQL规则测试', 'SQL业务规则测试');
+insert into bs_paramcode_dict values(12001, 'PHONE_NO', 5, 15, '用户号码');
+insert into bs_ruleinparam_rel values(70091, 12001, 'REQUEST_INFO.PHONE_NO', '');
+insert into bs_factorgroup_dict values(50091, '规则组1', 0);
+insert into bs_groupretmsg_info values(50091, 7700091, '');
+insert into bs_returnmsg_dict values(7700091, '号码已经存在本业务，不能重复办理', 'filename', 'bp_name', 'advice msg', 'tips text');
+insert into bs_rulefactorgroup_rel values(70091, 50091, 1);
+
+insert into bs_groupfactor_rel values(50091, 30091, 1);
+insert into bs_rulefactor_dict values(30091, 12001, 10, 'select 1 from test_usr_60 where phone_no=:PHONE_NO<char[16]>', 'value2', '表中已有数据', 'note');
+
+clxml sQDual '{"REQUEST_INFO":{"PHONE_NO":"13835013680"}}'
+clxml sQDual '{"REQUEST_INFO":{"PHONE_NO":"13835013681"}}'
+

@@ -1,0 +1,89 @@
+#Host:                          (172.21.0.116)
+#User:                          /crmnga
+#Home:                          /crmnga
+#FileDir:                       /crmnga/run/cfg/tuxconfig
+#####################请按照数字排序配置SRVID####################
+*RESOURCES
+IPCKEY                          222429
+PERM                            0666
+MASTER                         	CRMNGA
+MAXACCESSERS                    4500
+MAXSERVERS                      2000
+MAXSERVICES                     7000
+MAXNETGROUPS                    200
+MAXGTT                          200
+MAXCONV                         100
+SCANUNIT                        10
+SANITYSCAN                      5
+BBLQUERY                        180
+BLOCKTIME                       900
+MODEL                           SHM
+SYSTEM_ACCESS                   PROTECTED,NO_OVERRIDE
+LDBAL                           Y
+
+*MACHINES
+"BssDemo"	LMID=CRMNGA
+        TYPE=AIX
+        APPDIR="/crmpdpp/csf/run/bin"
+        TUXCONFIG="/crmpdpp/csf/run/cfg/tuxconfig"
+        TUXDIR="/tuxedo10/tuxedo10gR3"
+        ULOGPFX="/crmpdpp/csf/run/log/ULOG"
+        MAXWSCLIENTS=800
+
+*GROUPS
+ALL_NGBOSS       	 LMID=CRMNGA    GRPNO=150
+ORDERMNGTEST   		 LMID=CRMNGA     GRPNO=160
+CUSTMNGTEST   		 LMID=CRMNGA     GRPNO=170
+CUSTSVCTEST  		 LMID=CRMNGA     GRPNO=180
+PRODMNGTEST 		 LMID=CRMNGA     GRPNO=190
+ACCMNGTEST 		     LMID=CRMNGA     GRPNO=210
+INTERFACEMNGTEST 	 LMID=CRMNGA     GRPNO=220
+WSLGRP_NGBOSS    	 LMID=CRMNGA     GRPNO=230
+JSLGRP_NGBOSS    	 LMID=CRMNGA     GRPNO=240
+JREPGRP_NGBOSS   	 LMID=CRMNGA     GRPNO=250
+WTCGRP_NGBOSS    	 LMID=CRMNGA     GRPNO=260 OPENINFO=NONE
+
+*SERVERS
+
+DEFAULT:
+        CLOPT="-A "
+        RESTART=Y       GRACE=0 MAXGEN=10
+
+
+WSL             SRVGRP=WSLGRP_NGBOSS SRVID=4 RESTART=Y MAXGEN=10
+                CLOPT= "-A -t -- -n //172.21.1.72:7887 -m10 -M50 -x10 -K both -c 10204"
+
+JSL             SRVGRP=JSLGRP_NGBOSS SRVID=5 RESTART=Y  GRACE=0 MAXGEN=10
+                CLOPT= "-A -t -- -n //172.21.1.72:25209 -m10 -M50 -x10"
+
+
+
+DMADM           SRVGRP=WTCGRP_NGBOSS    SRVID=1
+GWADM           SRVGRP=WTCGRP_NGBOSS    SRVID=2
+GWTDOMAIN       SRVGRP=WTCGRP_NGBOSS    SRVID=3
+                CLOPT= "-A -t"
+
+#####################SRVID  使用规划###########################
+#     每个 server 之间的 SRVID 配置时前后间隔 50
+#
+#     ORDERMNG       订单管理    SRVID 49    --->4999
+#     CUSTMNG        客户管理    SRVID 5000  --->9999
+#     CUSTSVC        客户服务    SRVID 10000 --->14999
+#     PRODMNG        产品管理    SRVID 15000 --->17999
+#     ACCMNG         账务管理    SRVID 18000 --->20999
+#     INTERFACEMNGTEST   外围接口    SRVID 21000 --->23999
+#     ALL_NGBOSS     公共部分    SRVID 24000 --->
+#
+#     注：Tuxedo 允许 SRVID 使用范围 1 --> 30000
+##############################################################
+
+
+##############测试UBB配置不区分功能域，配置中间间隔50  ##############
+
+RRouteInfo SRVGRP=ALL_NGBOSS SRVID=4672 CONV=N MIN=1 MAX=1
+      CLOPT="-A -r -t -o /crmpdpp/csf/run/log/RRouteInfo.log"
+
+
+*SERVICES
+######################
+

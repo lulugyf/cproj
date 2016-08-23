@@ -1,0 +1,18 @@
+{
+	"ROOT": {
+		"HEADER": {
+			"POOL_ID": "11",
+			"DB_ID": "",
+			"ENV_ID": "",
+			"CHANNEL_ID": "02",
+			"ROUTING": {
+				"ROUTE_KEY": 10,
+				"ROUTE_VALUE": "15799881753"
+			}
+		},
+		"BODY": {
+			"PHONE_NO": "15799881753",
+			"TEST": "÷–Œƒ≤‚ ‘"
+		}
+	}
+}

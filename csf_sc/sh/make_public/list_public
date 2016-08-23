@@ -1,0 +1,13 @@
+run/framework/src/public/bc/basement
+run/framework/src/public/bc/account
+run/framework/src/public/bc/ahlocal
+run/framework/src/public/bc/customer
+run/framework/src/public/bc/custview
+run/framework/src/public/bc/interaction
+run/framework/src/public/bc/market
+run/framework/src/public/bc/oneboss
+run/framework/src/public/bc/order
+run/framework/src/public/bc/product
+run/framework/src/public/bc/user
+run/framework/src/public/bp/interface
+run/framework/src/public/bp/pubShare

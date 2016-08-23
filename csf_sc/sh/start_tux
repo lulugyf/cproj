@@ -1,0 +1,8 @@
+echo
+s_public_DelShm
+#imdb_run start server IMDB 
+s_public_InitShm
+tmboot -y -w
+tmboot -i 2
+tmboot -i 3
+echo "All TUXEDO servers was started..."

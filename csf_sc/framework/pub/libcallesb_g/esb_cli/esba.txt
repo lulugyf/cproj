@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?><ROOT><PHONE_NO type="string">15799881753</PHONE_NO><TEST type="string">#####XML报文:中文测试，校验是否有乱码出现，ESB虽然透传，但是改变了编码，需要在发送数据的时候将字符串换成UTF-8编码#####</TEST></ROOT>

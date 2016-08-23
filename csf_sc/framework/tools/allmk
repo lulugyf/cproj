@@ -1,0 +1,24 @@
+#!/usr/bin/sh
+makeMode=$1
+alldirfile=$2
+
+if [ -f "${alldirfile}" ] ; then
+	cat ${alldirfile} | while read line
+	do
+	    echo "enter into dir:${line}"
+	    if [ -d ${line} ] ; then	    
+	    	cd ${line}
+	    	if [ ${makeMode} -eq 0 ] ; then
+	    		bcpmk
+	    	elif 
+	    		[ ${makeMode} -eq 1 ] ; then
+	    		bcpmk 1
+	    	else
+	    		bcpmk clean
+	    	fi
+	    else
+	    	echo "-dir:${line} don't exist!"
+	    fi
+	    cd ../   # go to back dir
+	done
+fi

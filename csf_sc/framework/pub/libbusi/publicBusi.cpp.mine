@@ -1,0 +1,1164 @@
+#include <alloca.h>
+#include <regex.h>
+
+
+#include "framework.h"
+
+
+extern "C" {
+
+	char asc_val[] = {
+		'A','z','C','s','E','k','G','r','I','y',
+		'K','u','M','q','O','n','Q','l','S','f',
+		'U','h','W','c','Y','a','Z','b','X','d',
+		'e','T','g','V','i','j','F','p','m','P',
+		'o','N','R','H','D','t','L','v','w','B',
+		'J','x'
+	};
+
+	/***************************************************/
+	/*  en_cipher():加密函数                           */
+	/*    src:输入参数,明文,固定6字节数字              */
+	/*    dst:输出参数,密文,固定6字节字母              */
+	/***************************************************/
+	void en_cipher(char *src,char *dst)
+	{
+		int val,i,m;
+		struct timeval tv;
+
+		if(src==NULL || dst==NULL)
+			return;
+
+		val=atoi(src);
+		gettimeofday(&tv,NULL);
+
+		val=(tv.tv_usec%2146)*1000000+val;
+
+		for(i=0;i<6;i++)
+		{
+			m=val%52;
+			val=val/52;
+			dst[i]=asc_val[m];
+		}
+		dst[6]=0;
+
+		return;
+	}
+
+	/***************************************************/
+	/*  de_cipher():解密函数                           */
+	/*    src:输入参数,密文,固定6字节字母              */
+	/*    dst:输出参数,明文,固定6字节数字              */
+	/***************************************************/
+	void de_cipher(char *src,char *dst)
+	{
+		int val,m,i;
+
+		if(src==NULL || dst==NULL)
+			return;
+
+		for(val=0,i=5;i>=0;i--)
+		{
+			for(m=0; m<52 && asc_val[m]!=src[i]; m++);
+			val=val*52+m;
+		}
+		sprintf(dst,"%06d\0",val%1000000);
+
+		return;
+	}
+
+	/***************************************************/
+	/*  cmp_cipher():密码校验函数                      */
+	/*    s1:输入参数1,明文或密文,固定6字节数字或字母  */
+	/*    s2:输出参数2,明文或密文,固定6字节数字或字母  */
+	/*  输出:密码校验成功，返回0                       */
+	/***************************************************/
+	int cmp_cipher(char *s1,char *s2)
+	{
+		char ss1[8],ss2[8];
+		char *sp1,*sp2;
+
+		if(s1==NULL || s2==NULL)
+			return -1;
+
+		if(s1[0]>'9')
+		{
+			de_cipher(s1,ss1);
+			sp1=ss1;
+		}
+		else
+			sp1=s1;
+
+		if(s2[0]>'9')
+		{
+			de_cipher(s2,ss2);
+			sp2=ss2;
+		}
+		else
+			sp2=s2;
+
+		if(strncmp(sp1,sp2,6)==0)
+			return 0;
+		else
+			return 1;
+	}
+}
+
+
+/**
+ *<summary>得到指定的序列号。</summary>
+ *<author>lugz</author>
+ *<inparam name='puInParam' type='utype *'>
+ *   <uInParam>
+ *     int SeqType;               序列类型sSeqCtrl
+ *     int RegionId;     行政区域ID
+ *     char BusiPuId[16+1];       环节ID
+ *   </uInParam>
+ *</inparam>
+ *<returns>
+ *   <utype>
+ *     string SeqNo;                    成功的序列号
+ *   </utype>
+ *</returns>
+ *<remarks>无。</remarks>
+ */
+
+utype* pubGetLoginAccept(const utype *puInParam, TCtrlInfo *ptCtrlInfo)
+{
+	int iRegionId = 0;
+	char sBusiPuId[16+1];
+	long lSeqNo;
+	char sSeqNo[63+1], sShortSeqNo[63+1], sShortSeqNoFormat[63+1], sYmMmDd[6+1];
+	char sSqlStmt[255+1];
+	char sTollNo[12+1];
+
+	int iSeqType = 0;               /*序列类型*/
+	char sSeqName[60 + 1];          /*序列名*/
+	int iSeqNameExt = 0;            /*序列组成规则*/
+	char sIsRestart[1 + 1];         /*是否当天从0开始取值*/
+	char sFixedPrefix[10 + 1];              /*固定序列号前缀*/
+	char sFixedSuffix[10 + 1];              /*固定序列号后缀*/
+	char sHasRegion[1 + 1];         /*是否包含地市代码*/
+	char sHasToll[3 + 1];         /*是否包含长途区号*/
+	char sHasDate[1 + 1];           /*是否包含日期信息*/
+	char sHasPu[1 + 1];             /*是否包含环节代码*/
+	int iSeqLength = 0;             /*序列长度*/
+	char sCurDate[17 + 1];          /*当前日期。日期格式：YYYYMMDD HH24:MI:SS*/
+	long lYesterdayMaxSeq = 0;              /*昨天序列最大值*/
+
+	uAutoPtr puRet(uInit(1));
+	memset(sHasToll, 0, sizeof(sHasToll));
+	memset(sHasDate, 0, sizeof(sHasDate));
+	memset(sBusiPuId, 0, sizeof(sBusiPuId));
+	memset(ptCtrlInfo, 0 ,sizeof(TCtrlInfo));
+	iSeqType = utGetInt(puInParam, "ACCEPT_TYPE", (int*)0);
+	iRegionId = utGetInt(puInParam, "REGION_ID", (int*)0);
+	if (utFind(puInParam, "BUSIPUID") != UPOS_END)
+	{
+		strcpy(sBusiPuId, utGetStr(puInParam, "BUSIPUID", (int*)0));
+		Trim(sBusiPuId);
+	}
+
+	otl_nocommit_stream tSeqStreamSel;
+	tSeqStreamSel.set_flush(false);
+	try
+	{
+		tSeqStreamSel.open(1,
+				"SELECT SEQ_TYPE, SEQ_NAME, SEQ_NAME_EXT, IS_RESTART,"
+				"       nvl(FIXED_PREFIX, ' '), nvl(FIXED_SUFFIX, ' '), HAS_REGION, has_toll, HAS_DATE, HAS_PU,"
+				"       SEQ_LENGTH"
+				"  FROM bs_SeqCtrl_dict"
+				" WHERE SEQ_TYPE = :SEQ_TYPE<int>",GETDB(ptCtrlInfo));
+		tSeqStreamSel<<iSeqType;
+		if ( !tSeqStreamSel.eof() )
+		{
+			tSeqStreamSel>>iSeqType>>sSeqName>>iSeqNameExt>>sIsRestart>>sFixedPrefix>>sFixedSuffix>>sHasRegion>>sHasToll>>sHasDate>>sHasPu>>iSeqLength;
+			Trim(sSeqName);
+			Trim(sFixedPrefix);
+			Trim(sFixedSuffix);
+		}
+		else
+		{
+			ptCtrlInfo->lErrCode = 399000101;
+			strcpy(ptCtrlInfo->retCode, "399000101");
+			sprintf(ptCtrlInfo->retMsg, "所取的序列[%d]不存在", iSeqType);
+			goto ERR_LABEL;
+		}
+		tSeqStreamSel.close();
+	}
+	catch(...)
+	{
+		ptCtrlInfo->lErrCode = 399000102;
+		strcpy(ptCtrlInfo->retCode, "399000102");
+		sprintf(ptCtrlInfo->retMsg, "取序列[%d]出错", iSeqType);
+		goto ERR_LABEL;
+	}
+
+	tSeqStreamSel.set_flush(false);
+	try
+	{
+		memset(sYmMmDd, 0, sizeof(sYmMmDd));
+		tSeqStreamSel.open(1,   "SELECT to_char(cur_date, 'yyyymmdd hh24:mi:ss'), yesterday_max_seq"
+				"  FROM bs_SeqCtrlRegion_dict"
+				" WHERE SEQ_TYPE=:SEQ_TYPE<int>"
+				"   AND (REGION_ID=:REGION_ID<int]> OR REGION_ID=0)",GETDB(ptCtrlInfo));
+		tSeqStreamSel<<iSeqType<<iRegionId;
+		if ( !tSeqStreamSel.eof() )
+		{
+			tSeqStreamSel>>sCurDate>>lYesterdayMaxSeq;
+		}
+		else
+		{
+			ptCtrlInfo->lErrCode = 399000103;
+			strcpy(ptCtrlInfo->retCode, "399000103");
+			sprintf(ptCtrlInfo->retMsg, "取行政区域[%d]最大值不存在", iRegionId);
+			goto ERR_LABEL;
+		}
+		ptCtrlInfo->iSqlRows = tSeqStreamSel.get_rpc();
+		tSeqStreamSel.close();
+	}
+	catch(...)
+	{
+		ptCtrlInfo->lErrCode = 399000104;
+		strcpy(ptCtrlInfo->retCode, "399000104");
+		sprintf(ptCtrlInfo->retMsg, "取行政区域[%d]最大值出错!", iRegionId);
+		goto ERR_LABEL;
+	}
+	memset(sSqlStmt, 0, sizeof(sSqlStmt));
+	switch(iSeqNameExt)
+	{
+		case 1:/*以地市作为后缀*/
+			{
+				sprintf(sSqlStmt, "select to_char(%s%d.nextval),to_char(sysdate,'yymmdd') from dual", sSeqName, iRegionId);
+				break;
+			}
+		default:
+			{
+				sprintf(sSqlStmt, "select to_char(%s.nextval),to_char(sysdate,'yymmdd') from dual", sSeqName);
+				break;
+			}
+	}
+	try
+	{
+		char sSeqNoTmp[128];
+		memset(sYmMmDd, 0, sizeof(sYmMmDd));
+		memset(sSeqNoTmp, 0, sizeof(sSeqNoTmp));
+		tSeqStreamSel.open(10,sSqlStmt,GETDB(ptCtrlInfo));
+		tSeqStreamSel>>sSeqNoTmp>>sYmMmDd;
+		lSeqNo = atol(sSeqNoTmp);
+		tSeqStreamSel.close();
+	}
+	catch(...)
+	{
+		ptCtrlInfo->lErrCode = 399000102;
+		strcpy(ptCtrlInfo->retCode, "399000102");
+		sprintf(ptCtrlInfo->retMsg, "取序列出错[%s]", sSqlStmt);
+		goto ERR_LABEL;
+	}
+	if (strncmp(sCurDate+2, sYmMmDd, 6) != 0)
+	{
+		try
+		{
+			tSeqStreamSel.open(1,"declare pragma autonomous_transaction; begin UPDATE bs_SeqCtrlRegion_dict"
+					"   SET cur_date=sysdate, yesterday_max_seq=:seqval<long>"
+					" WHERE SEQ_TYPE=:SEQ_TYPE<int>"
+					"   AND (REGION_ID=:REGION_ID<int> OR REGION_ID=0) ;  "
+					" commit; end;",GETDB(ptCtrlInfo));
+			tSeqStreamSel<<lSeqNo<<iSeqType<<iRegionId;
+			lYesterdayMaxSeq = lSeqNo;
+			ptCtrlInfo->iSqlRows = tSeqStreamSel.get_rpc();
+			tSeqStreamSel.close();
+		}
+		catch(...)
+		{
+			GETDB(ptCtrlInfo).rollback();
+			ptCtrlInfo->lErrCode = 399000105;
+			strcpy(ptCtrlInfo->retCode, "399000105");
+			strcpy(ptCtrlInfo->retMsg, "更新最大序列值出错");
+			goto ERR_LABEL;
+		}
+		if (ptCtrlInfo->iSqlRows == 0)
+		{
+			ptCtrlInfo->lErrCode = 399000104;
+			strcpy(ptCtrlInfo->retCode, "399000104");
+			sprintf(ptCtrlInfo->retMsg, "更新行政区域[%d]最大值出错!", iRegionId);
+			goto ERR_LABEL;
+		}
+	}
+	memset(sSeqNo, 0, sizeof(sSeqNo));
+	memset(sShortSeqNo, 0, sizeof(sShortSeqNo));
+	if (sIsRestart[0] == 'Y')
+	{
+		lSeqNo = lSeqNo - lYesterdayMaxSeq;
+	}
+
+	strcpy(sSeqNo, sFixedPrefix);
+
+	if (sHasRegion[0] == 'Y')
+	{
+		char sRegionId[9+1];
+
+		memset(sRegionId, 0, sizeof(sRegionId));
+		sprintf(sRegionId, "%d", iRegionId);
+		Trim(sRegionId);
+		strcat(sSeqNo, sRegionId);
+	}
+
+	if (sHasToll[0] == 'Y')
+	{
+		memset(sTollNo, 0, sizeof(sTollNo));
+		try
+		{
+			tSeqStreamSel.open(1,"SELECT AREA_CODE"
+					"  FROM bs_poli_region_dict"
+					" WHERE P_REGION_ID=:P_REGION_ID<int>",GETDB(ptCtrlInfo));
+			tSeqStreamSel<<iRegionId;
+			if (!tSeqStreamSel.eof())
+			{
+				tSeqStreamSel>>sTollNo;
+				Trim(sTollNo);
+			}
+			else
+			{
+				ptCtrlInfo->lErrCode = 399000106;
+				strcpy(ptCtrlInfo->retCode, "399000106");
+				sprintf(ptCtrlInfo->retMsg, "取地市[%d]长途区号不存在", iRegionId);
+				goto ERR_LABEL;
+			}
+			ptCtrlInfo->iSqlRows = tSeqStreamSel.get_rpc();
+			tSeqStreamSel.close();
+		}
+		catch(...)
+		{
+			ptCtrlInfo->lErrCode = 399000107;
+			strcpy(ptCtrlInfo->retCode, "399000107");
+			strcpy(ptCtrlInfo->retMsg, "取地市长途区号出错!");
+			goto ERR_LABEL;
+		}
+
+		if (sHasToll[2] == 'Y')
+		{
+			if (sHasToll[1] == 'Y')
+			{
+				strcpy(sSeqNo, sTollNo);
+				strcat(sSeqNo, sFixedPrefix);
+			}
+			else
+			{
+				//如果不需要前缀0，则跳过0。
+				if (sTollNo[0] == '0')
+				{
+					strcpy(sSeqNo, sTollNo+1);
+					strcat(sSeqNo, sFixedPrefix );
+				}
+				else
+				{
+					strcpy(sSeqNo, sTollNo+1);
+					strcat(sSeqNo, sFixedPrefix );
+				}
+			}
+		}
+		else
+		{
+			if (sHasToll[1] == 'Y')
+			{
+				strcat(sSeqNo, sTollNo);
+			}
+			else
+			{
+				//如果不需要前缀0，则跳过0。
+				if (sTollNo[0] == '0')
+				{
+					strcat(sSeqNo, sTollNo+1);
+				}
+				else
+				{
+					strcat(sSeqNo, sTollNo);
+				}
+			}
+		}
+	}
+
+	if (sHasDate[0] == 'Y')
+	{
+		strcat(sSeqNo, sYmMmDd);
+	}
+	if (sHasPu[0] == 'Y')
+	{
+		strcat(sSeqNo, sBusiPuId);
+	}
+	if (iSeqLength != 0)
+	{
+		sprintf(sShortSeqNoFormat,"%%0%dld", iSeqLength);
+	}
+	else
+	{
+		sprintf(sShortSeqNoFormat,"%%ld", iSeqLength);
+	}
+	sprintf(sShortSeqNo, sShortSeqNoFormat, lSeqNo);
+	strcat(sSeqNo, sShortSeqNo);
+	strcat(sSeqNo, sFixedSuffix);
+
+	utAddStr(puRet, "LOGIN_ACCEPT", sSeqNo);
+	LogUtype(puRet);
+ERR_LABEL:
+	if ((ptCtrlInfo->lErrCode != 0) && (ptCtrlInfo->retCode[0] != '\0'))
+	{
+		sprintf(ptCtrlInfo->retCode, "%d", ptCtrlInfo->lErrCode);
+		throw(appException(ptCtrlInfo->lErrCode, ptCtrlInfo->retMsg));
+		return (NULL);
+	}
+	return(puRet.release());
+}
+
+#if defined(PROVINCE_SX)  // 山西按照新的加密算法处理三户密码 （cipher.cpp）
+
+utype* pubEncryptPasswd(const utype *puInParam, TCtrlInfo *ptCtrlInfo)
+{
+	int i=0;
+	int f=0;
+	char* src=utGetStr(puInParam, "SRC");
+	char dst[1024];
+	uAutoPtr puo(uInit(1));
+	char* en=strchr(src, ' ');
+	if(en) *en=0;
+	size_t len=strlen(src);
+	memset(ptCtrlInfo, 0 ,sizeof(TCtrlInfo));
+	if(utGetInt(puInParam, "OP_TYPE")){
+		en_cipher(src, dst);
+	}else{
+		de_cipher(src, dst);
+	}
+	utAddStr(puo, "DST", dst);
+	return puo.release();
+}
+#else
+utype* pubEncryptPasswd(const utype *puInParam, TCtrlInfo *ptCtrlInfo)
+{
+	int i=0;
+	int f=0;
+	char* src=utGetStr(puInParam, "SRC");
+	char dst[1024];
+	uAutoPtr puo(uInit(1));
+	const char* ptsr="PLMOKNIJBUHYGVTFCRDXESZAQWqazwsxedcrfvtgbyhnujmikolp1234567890JBUHYGVTFC-*&^$#@!;]";
+	char* en=strchr(src, ' ');
+	if(en) *en=0;
+	size_t len=strlen(src);
+	memset(ptCtrlInfo, 0 ,sizeof(TCtrlInfo));
+	if(utGetInt(puInParam, "OP_TYPE")){
+		for(i=0;src[i]!=0;++i){
+			f=(src[i]-'0'+i+1)*(len/2+1);
+			L4C_TRACE("\n--- BEGIN ****----f==[%d]",f);
+			dst[i]=ptsr[(src[i]-'0'+i+1)*(len/2+1)];
+		}
+	}else{
+		for (i=0;i<len;++i){
+			const char* c=strchr(ptsr, src[i]);
+			if(c==NULL) dst[i]='0';
+			else dst[i]=((c-ptsr)/(len/2+1)-i-1)+'0';
+		}
+	}
+	dst[i]=0;
+	utAddStr(puo, "DST", dst);
+	return puo.release();
+}
+#endif
+
+/*   use sprintf instead of  bind var   */
+utype* pubGetSysTime(const utype *puInParam, TCtrlInfo *ptCtrlInfo)
+{
+	uAutoPtr puo(uInit(1));
+	char sqlstr[128];
+	char sstmt[256];
+	memset(ptCtrlInfo, 0 ,sizeof(TCtrlInfo));
+	memset(sstmt, 0 ,sizeof(sstmt));
+	otl_nocommit_stream qsysdate;
+
+	sprintf(sstmt,"select to_char(sysdate, '%s') from dual" ,utGetStr(puInParam, "DATE_FORMAT"));
+	qsysdate.open(1,sstmt,GETDB(ptCtrlInfo));
+	qsysdate>>sqlstr;
+	utAddStr(puo, "SYSDATE", sqlstr);
+	return puo.release();
+}
+/*
+   utype* pubGetSysTime(const utype *puInParam, TCtrlInfo *ptCtrlInfo)
+   {
+   uAutoPtr puo(uInit(1));
+   char sqlstr[128];
+   memset(ptCtrlInfo, 0 ,sizeof(TCtrlInfo));
+   otl_nocommit_stream qsysdate;
+   qsysdate.open(1,"select to_char(sysdate, :DATE_FMT<char[128]>) from dual" ,GETDB(ptCtrlInfo));
+   qsysdate<<utGetStr(puInParam, "DATE_FORMAT");
+   qsysdate>>sqlstr;
+   utAddStr(puo, "SYSDATE", sqlstr);
+   return puo.release();
+   }
+   */
+
+#include <sys/timeb.h>
+#include <math.h>
+utype* pubGetRandPass(const utype *puInParam, TCtrlInfo *ptCtrlInfo)
+{
+	int bit=6;
+	char pass[128];
+	char fmt[]="%06d";
+
+	uAutoPtr puo(uInit(1));
+	struct timeb tp;
+	ftime(&tp);
+	srand(tp.millitm*7031);
+	if(utFind(puInParam, "BIT")!=UPOS_END) bit=utGetInt(puInParam, "BIT");
+	fmt[2]=(bit%10)+'0';
+	sprintf(pass,fmt, (int)(rand()/((double)RAND_MAX)*pow(10.0,bit)));
+	utAddStr(puo, "RAND_PASS", pass);
+	return puo.release();
+}
+
+
+utype* doModifySql(const char* sql, const utype *inparam, TCtrlInfo *errInfo)
+{
+
+	otl_var_desc* vdesc;
+	int i=0,bindNum=0;
+	L4C_TRACE("sql is:[%s]",sql);
+	otl_nocommit_stream getResult(1,sql,GETDB(errInfo));
+	vdesc=getResult.describe_in_vars(bindNum);
+	for (i=0;i<bindNum;i++){
+		if(utGetEmpty(inparam,vdesc[i].name+1)){
+			getResult << otl_null();
+		}
+		else{
+		switch(vdesc[i].ftype){
+			case 1:
+				getResult << utGetStr(inparam,vdesc[i].name+1,(int*)NULL);
+				break;
+			case 2:
+			case 3:
+				getResult << utGetDouble(inparam,vdesc[i].name+1,(int*)NULL);
+				break;
+			case 4:
+				getResult << utGetInt(inparam,vdesc[i].name+1,(int*)NULL);
+				break;
+			case 7:
+				getResult << utGetLong(inparam,vdesc[i].name+1,(int*)NULL);
+				break;
+		}
+		}
+	}
+	getResult.flush();
+	if(errInfo){
+		errInfo->iSqlRows = getResult.get_rpc();
+	}
+	return NULL;
+}
+
+utype* pubModifySql(const utype *inparam, TCtrlInfo *errInfo)
+{
+	return doModifySql(utGetStr(inparam,"__SQL"), utGetStruct(inparam,"IN_DATA"), errInfo);
+}
+
+
+utype* doQuerySql(const char* sql, const utype *inparam, TCtrlInfo *errInfo)
+{
+	utype* array=uInit(0);
+	uAutoPtr pp(array);
+
+	otl_column_desc* cdesc;
+	otl_var_desc* vdesc;
+	int i=0,bindNum=0,colunmNum=0;
+	L4C_TRACE("sql is:[%s]",sql);
+	otl_nocommit_stream getResult;
+	getResult.open(10, sql, GETDB(errInfo));
+	vdesc=getResult.describe_in_vars(bindNum);
+	for (i=0;i<bindNum;i++){
+		switch(vdesc[i].ftype){
+			case 1:
+				getResult << utGetStr(inparam,vdesc[i].name+1,(int*)NULL);
+				break;
+			case 2:
+			case 3:
+				getResult << utGetDouble(inparam,vdesc[i].name+1,(int*)NULL);
+				break;
+			case 4:
+				getResult << utGetInt(inparam,vdesc[i].name+1,(int*)NULL);
+				break;
+			case 7:
+				getResult << utGetLong(inparam,vdesc[i].name+1,(int*)NULL);
+				break;
+		}
+	}
+	cdesc=getResult.describe_select(colunmNum);
+
+	i=0;
+	while(!getResult.eof()){
+		utype* row=uInit(0);
+		utAddStruct(array,"ROW",row);
+		for(int n=0;n<colunmNum;++n){
+			int k;
+			long l;
+			double d;
+			otl_datetime tm;
+
+			switch(cdesc[n].otl_var_dbtype){
+
+				case 19:
+				case 8:
+				case 18:
+					char sDateTime[20];
+					char* s;
+					getResult >> tm;
+					sprintf(sDateTime,"%04d%02d%02d%02d%02d%02d",tm.year,tm.month,tm.day,tm.hour,tm.minute,tm.second);
+					utAddStr(row,cdesc[n].name,sDateTime);
+					break;
+
+				case 1:{
+					       char * s = (char *)malloc(cdesc[n].dbsize);
+					       if (s != NULL) {
+						       memset(s, '\0', cdesc[n].dbsize);
+						       getResult >> s;
+						       utAddStr(row, cdesc[n].name, s);
+						       free(s);
+					       } else {
+						       utAddStr(row, cdesc[n].name, "");
+					       }
+				       }
+				       break;
+
+				case 2:
+				case 3:
+				       if(cdesc[n].scale==0){
+					       if(cdesc[n].prec>9){
+						       getResult >> l;utAddLong(row,cdesc[n].name,l);
+					       }
+					       else{
+						       getResult >> k;utAddInt(row,cdesc[n].name,k);
+					       }
+				       }else {
+					       getResult >> d;utAddDouble(row,cdesc[n].name,d);
+				       }
+				       break;
+
+				case 7:
+				       getResult >> l;utAddLong(row,cdesc[n].name,l);
+				       break;
+				case 4:
+				       getResult >> k;utAddInt(row,cdesc[n].name,k);
+				       break;
+			}
+
+		}
+		i++;
+	}
+	getResult.close();
+	errInfo->iSqlRows=i;
+	L4C_TRACE("--------sql excute output-----");
+	LogUtype(pp);
+	L4C_TRACE("-------=sql excute output=----");
+	return pp.release();
+}
+
+utype* pubQuerySql(const utype *inparam, TCtrlInfo *errInfo)
+{
+	return doQuerySql(utGetStr(inparam,"__SQL"), utGetStruct(inparam,"IN_DATA"), errInfo);
+}
+
+
+
+
+#ifndef INIT0
+#define INIT0(a)  memset(a,0,sizeof(a))
+#endif
+#include <sstream>
+utype* pubBusiReversal(const utype *puInParam, TCtrlInfo *ptCtrlInfo)
+{
+	const utype* pTableArray=NULL;
+
+	ostringstream sAllColumn;
+	ostringstream sSqlInsertHis;
+	ostringstream sSqlDeleteUqIdx;
+	ostringstream sSqlHisToOrg;
+
+	pTableArray=utGetStruct(puInParam, "TABLE_ARRAY");
+	for(UPOS pt=utFind(pTableArray, "TABLE"); pt!=UPOS_END; pt=utNext(pTableArray, pt)){
+		const utype* pTable=utGetStruct(pTableArray, "TABLE", pt);
+		const char* sTableName=utGetStr(pTable, "TABLE_NAME");
+		const char* sTableNameHis=utGetStr(pTable, "TABLE_NAME_HIS");
+		const char* sTableOwner=utGetStr(pTable, "TABLE_OWNER");
+
+		sAllColumn.str(string());
+		sSqlInsertHis.str(string());
+		sSqlDeleteUqIdx.str(string());
+		sSqlHisToOrg.str(string());
+
+		otl_nocommit_stream qalltabcol;
+		qalltabcol.open(1,	"SELECT a.column_name \
+				FROM all_tab_columns a \
+				WHERE a.owner = :towmer<char[30+1]> \
+				AND a.table_name = :tname<char[30+1]>", GETDB(ptCtrlInfo));
+		qalltabcol<<sTableOwner<<sTableName;
+
+		while(!qalltabcol.eof())
+		{
+			char sCN[100];
+			qalltabcol>>sCN;
+			if(sAllColumn.tellp() == 0)
+				sAllColumn << sCN;
+			else
+				sAllColumn << ',' << sCN;
+		}
+
+		if (sAllColumn.tellp() <= 0)
+		{
+			throw(appException(399000201, "表[%s]查询无列", sTableName,NULL));
+		}
+		//准备sql语句
+		//记入历史表
+		sSqlInsertHis << "insert into " << sTableNameHis << '(' << sAllColumn.str()
+				<< ", UPDATE_CODE,UPDATE_TYPE,UPDATE_LOGIN,UPDATE_DATE,UPDATE_TIME,UPDATE_ACCEPT)"
+				<< "select " << sAllColumn.str() << ",:FUNCTION_CODE<char[5+1]>,decode(UPDATE_TYPE,'U','X','I','D','X','U','D','I'),:LOGIN_NO<char[20+1]>,to_number(substr(:UPDATE_TIME<char[14+1]>,1,8)), to_date(:UPDATE_TIME<char[14+1]>,'YYYYMMDDHH24MISS'), :NEW_ACCEPT<long> "
+				<< "from " << sTableNameHis << " where UPDATE_ACCEPT=:OLD_ACCEPT<long> and UPDATE_TYPE in ('D','U','I','X')";
+		//删除原表数据的sql
+		sSqlDeleteUqIdx << "delete from " << sTableName << " where LOGIN_ACCEPT=:OLD_ACCEPT<long>";
+		//把历史表插入原表
+		sSqlHisToOrg << "insert into " << sTableName << '(' << sAllColumn.str()
+				<< ") select " << sAllColumn.str() << " from " << sTableNameHis
+				<< " where UPDATE_ACCEPT=:OLD_ACCEPT<long> and  UPDATE_TYPE in ('D', 'U')";
+
+		uAutoPtr pp(uInit(2)), pIn(uInit(10));
+		utAddStr(pp, "__SQL", sSqlInsertHis.str().c_str());
+		utAddLong(pIn, "OLD_ACCEPT", utGetLong(puInParam, "OLD_ACCEPT"));
+		utAddLong(pIn, "NEW_ACCEPT", utGetLong(puInParam, "NEW_ACCEPT"));
+		utAddStr(pIn, "FUNCTION_CODE", utGetStr(puInParam, "FUNCTION_CODE"));
+		utAddStr(pIn, "UPDATE_TIME", utGetStr(puInParam, "UPDATE_TIME"));
+		utAddStr(pIn, "LOGIN_NO", utGetStr(puInParam, "LOGIN_NO"));
+		utAddStruct(pp, "IN_DATA", pIn.release());
+		pubModifySql(pp, ptCtrlInfo);//记入历史表
+
+
+		utSetStr(pp, "__SQL", UPOS_END, sSqlDeleteUqIdx.str().c_str());
+		pubModifySql(pp, ptCtrlInfo);//删除原表记录
+
+
+		utSetStr(pp, "__SQL", UPOS_END, sSqlHisToOrg.str().c_str());
+		pubModifySql(pp, ptCtrlInfo);//恢复原表记录
+	}
+	return NULL;
+}
+
+
+
+
+
+utype* pubRegexExec(const utype *puInParam, TCtrlInfo *ptCtrlInfo)
+{
+
+#define GETREGERR(ret, reg, str) \
+	{	\
+		size_t length = regerror(ret, reg, NULL, 0);\
+		str=NULL;\
+		str = (char*)alloca(length);\
+		if (str){\
+			regerror(ret, reg, str, length); \ 
+		}\
+	}
+	int ret, i;
+	regex_t r, *reg=&r;
+	regmatch_t subexprs[100] ;
+	uAutoPtr uRet(uInit(1));
+	ptCtrlInfo->iSqlRows=0;
+	const char* string=utGetStr(puInParam, "TEXT");
+
+	if ((ret=regcomp(reg, utGetStr(puInParam, "PATTERN"), REG_EXTENDED))!=0){
+		char *buffer;
+		GETREGERR(ret, reg, buffer);
+		if (buffer) {
+			throw(appException(399000301, "正则表达式解析失败:%s", buffer,NULL));
+		}
+		else{
+			throw(appException(399000301, "正则表达式解析失败"));
+		}
+	}
+
+	ret=regexec(reg,  string,100, subexprs, 0);
+
+	L4C_TRACE("ret=%d",ret);
+	if (ret !=0) {
+		if(ret==REG_NOMATCH) {
+			regfree(reg);
+			return uRet.release();
+		}
+		char *buffer;
+		GETREGERR(ret, reg, buffer);
+		regfree(reg);
+		if (buffer) {
+			throw(appException(399000302, "正则表达式解析失败:%s", buffer,NULL));
+		}
+		else{
+			throw(appException(399000302, "正则表达式解析失败"));
+		}
+	}
+	for (i = 0; i <100&&subexprs[i].rm_so!=-1; ++i) {
+		if (subexprs[i].rm_so == subexprs[i].rm_eo) {
+			continue;
+		}
+		else{
+			L4C_TRACE("%d",subexprs[i].rm_eo-subexprs[i].rm_so);
+			char* s=(char*)alloca(subexprs[i].rm_eo-subexprs[i].rm_so);
+			memcpy(s, string+subexprs[i].rm_so, subexprs[i].rm_eo-subexprs[i].rm_so);
+			s[subexprs[i].rm_eo-subexprs[i].rm_so]=0;
+			utAddStr(uRet, "SUB_TEXT", s);
+			++ptCtrlInfo->iSqlRows;
+		}
+	}
+
+	regfree(reg);
+	return uRet.release();
+}
+
+
+utype* pubReadTxtFile(const utype *puInParam, TCtrlInfo *ptCtrlInfo)
+{
+	char ll[4096];
+	int lastOcc=-1;
+	int lines=0;
+	uAutoPtr pout(uInit(10));
+	FILE* fp=fopen(utGetStr(puInParam, "FILE_NAME"), "r");
+	if(fp==NULL){
+		throw(appException(399000401, "文件打开失败"));
+	}
+	while(fgets(ll,sizeof(ll),fp)!=NULL){
+		size_t ll_len=strlen(ll);
+		int occ,flag1=0,flag2=0;
+
+		if(!lines) ++lines;
+
+		if(ll_len>=1){
+			if(ll[ll_len-1]!='\n'){
+				if(ll[ll_len-1]=='\r') ll[ll_len-1]=0;
+				flag1=1;
+			}else{
+				ll[ll_len-1]=0;
+				if(ll_len>=2) if(ll[ll_len-2]=='\r') ll[ll_len-2]=0;
+			}
+		}
+
+		if(lastOcc!=-1){
+			const char* s=utGetStr(pout, "LINE", lastOcc);
+			size_t len=strlen(s)+ll_len+1;
+			char* snew=(char*)alloca(len);
+			strcpy(snew,s);
+			strcat(snew,ll);
+			utSetStr(pout, "LINE", lastOcc, snew);
+			occ=lastOcc;
+		}else{
+			occ=utAddStr(pout, "LINE", ll);
+		}
+		if(flag1){
+			lastOcc=occ;
+		}else{
+			++lines;
+			lastOcc=-1;
+		}
+	}
+
+	ptCtrlInfo->iSqlRows=lines;
+	return pout.release();
+}
+
+
+
+utype* pubTxtSplit(const utype *puInParam, TCtrlInfo *ptCtrlInfo)
+{
+	uAutoPtr pout(uInit(10));
+	const char* src=utGetStr(puInParam, "TEXT");
+	const char* split=utGetStr(puInParam, "SPLIT");
+	size_t len=strlen(split);
+	char* tar=(char*)alloca(strlen(src)+1);
+	char* s=tar;
+	strcpy(tar, src);
+	while(1){
+		char* st=strstr(s, split);
+		if(st!=NULL){
+			char* sn=st+len;
+			*st=0;
+			utAddStr(pout, "SUB_TEXT", s);
+			s=sn;
+		}else{
+			utAddStr(pout, "SUB_TEXT", s);
+			return pout.release();
+		}
+
+	}
+}
+
+utype* pubQryChgDetail(const utype *puInParam, TCtrlInfo *ptCtrlInfo)
+{
+
+
+#define _ADDIN0(type)\
+	utAddEmpty(uColumn, "ORG_VALUE");\
+	utAdd ## type(uColumn, "HIS_VALUE", utGet ## type(pQryHisRow, sColumnName));\
+	utAddStr(uColumn, "NAME", sColumnName);
+
+#define _ADDIN1(type)\
+	utAdd ## type(uColumn, "ORG_VALUE", utGet ## type(pQryOrgRow, sColumnName));\
+	utAdd ## type(uColumn, "HIS_VALUE", utGet ## type(pQryHisRow, sColumnName));\
+	utAddStr(uColumn, "NAME", sColumnName);
+
+#define _ADDIN2(type)\
+	{switch(sType[0]){\
+				 case 'U':{\
+						  if(utGet ## type(pQryOrgRow, sColumnName)!=utGet ## type(pQryHisRow, sColumnName)){\
+							  _ADDIN1(type)\
+						  }\
+						  break;\
+					  }\
+				 case 'I':{\
+						  _ADDIN1(type)\
+						  break;\
+					  }\
+				 case 'D':{\
+						  _ADDIN0(type)\
+						  break;\
+					  }\
+				 default:\
+					 throw(appException(399000501, "未知操作类型[%s]", sType,NULL));\
+			 }\
+		break;}
+
+
+
+	uAutoPtr pout(uInit(3));
+
+	char sUniqueColumn[30+1];
+	char sSqlQryHis[2048]="";
+	char sAllColumn[4048]="";
+	char sSqlQryOrg[2048]="";
+	int  hasRI=0;
+	const utype* pTableArray=utGetStruct(puInParam, "TABLE_ARRAY");
+	for(UPOS pt=utFind(pTableArray, "TABLE"); pt!=UPOS_END; pt=utNext(pTableArray, pt)){
+		const utype* pTable=utGetStruct(pTableArray, "TABLE", pt);
+		const char* sTableName=utGetStr(pTable, "TABLE_NAME");
+		const char* sTableNameHis=utGetStr(pTable, "TABLE_NAME_HIS");
+		const char* sTableOwner=utGetStr(pTable, "TABLE_OWNER");
+		const char* sUniqueColumn=utGetStr(pTable, "UNIQUE_COLUMN");
+
+		uAutoPtr uColumnName(uInit(10));
+		uAutoPtr uResultSet(uInit(10));
+		hasRI=0;
+		INIT0(sSqlQryHis);
+		INIT0(sSqlQryOrg);
+		INIT0(sAllColumn);
+
+
+		utAddStr(uResultSet, "TABLE_NAME", sTableName);
+
+		//取出表的所有列
+		otl_nocommit_stream qalltabcol;
+		qalltabcol.open(1,	"SELECT a.column_name \
+				FROM all_tab_columns a \
+				WHERE a.owner = :towmer<char[30+1]> \
+				AND a.table_name = :tname<char[30+1]> and a.column_name not in\
+				('OP_TIME','LOGIN_NO','LOGIN_ACCEPT','OP_CODE','CREATE_NOTE','UPDATE_ACCEPT',\
+				 'UPDATE_TIME','UPDATE_DATE','UPDATE_LOGIN','UPDATE_TYPE','UPDATE_CODE','ID_NO','CONTRACT_NO','CUST_ID')",
+				GETDB(ptCtrlInfo));
+		qalltabcol<<sTableOwner<<sTableName;
+		while(!qalltabcol.eof()){
+			char sCN[100];
+			qalltabcol>>sCN;
+
+			strcat(sAllColumn,sCN);
+			strcat(sAllColumn, ",");
+			if(strcmp(sCN, sUniqueColumn)==0){
+				hasRI=1;
+			}
+			else utAddStr(uColumnName, "NAME", sCN);
+		}
+		if(uColumnName->cnt<2) throw(appException(399000502, "表[%s]查询无列", sTableName,NULL));
+		if (hasRI==0) throw(appException(399000503, "表[%s]无所配置的唯一索引列", sTableName,NULL));
+		char* sLastDH=strrchr(sAllColumn, ',');
+		*sLastDH=0;
+
+
+		//准备sql语句
+		//查询历史表
+		sprintf(sSqlQryHis, "select %s, %s, UPDATE_TYPE from %s where UPDATE_ACCEPT=:LOGIN_ACCEPT<long> and UPDATE_TYPE in ('I','U','D')",  sAllColumn, sUniqueColumn, sTableNameHis);
+		sprintf(sSqlQryOrg, "select %s from %s where %s=:RECORD_ID<long> and UPDATE_TYPE='X' and UPDATE_ACCEPT=:LOGIN_ACCEPT<long>", sAllColumn, sTableNameHis, sUniqueColumn);
+		uAutoPtr uQryHisIn(uInit(2)), uQryHisInData(uInit(1)), uQryHisOut;
+		utAddStr(uQryHisIn, "__SQL", sSqlQryHis);
+		utAddLong(uQryHisInData, "LOGIN_ACCEPT", utGetLong(puInParam, "LOGIN_ACCEPT"));
+		utAddStruct(uQryHisIn, "IN_DATA", uQryHisInData.release());
+		uQryHisOut=pubQuerySql(uQryHisIn, ptCtrlInfo);
+
+		UPOS pos;
+		for(pos=utFind(uQryHisOut,"ROW"); pos!=UPOS_END; pos=utNext(uQryHisOut, pos)){
+			uAutoPtr uRow(uInit(10)),uQryOrgOut;
+			const utype* pQryOrgRow=NULL;
+			const utype* pQryHisRow=utGetStruct(uQryHisOut, "ROW", pos);
+			const char* sType=utGetStr(pQryHisRow, "UPDATE_TYPE");
+
+			if(sType[0]!='D'){
+				uAutoPtr uQryOrgIn(uInit(2)),uQryOrgInData(uInit(2)) ;
+				utAddStr(uQryOrgIn, "__SQL", sSqlQryOrg);
+				utAddLong(uQryOrgInData, "LOGIN_ACCEPT", utGetLong(puInParam, "LOGIN_ACCEPT"));
+				utAddLong(uQryOrgInData, "RECORD_ID", utGetLong(pQryHisRow, sUniqueColumn));
+				utAddStruct(uQryOrgIn, "IN_DATA", uQryOrgInData.release());
+				uQryOrgOut=pubQuerySql(uQryOrgIn, ptCtrlInfo);
+				if(ptCtrlInfo->iSqlRows==0)
+					throw(appException(399000504, "变更操作找不到原表数据", sTableName,NULL));
+				pQryOrgRow=utGetStruct(uQryOrgOut, "ROW");
+			}
+			for(UPOS posColumn=utFind(uColumnName,"NAME"); posColumn!=UPOS_END; posColumn=utNext(uColumnName, posColumn)){
+				uAutoPtr uColumn(uInit(10));
+
+				const char* sColumnName=utGetStr(uColumnName, "NAME", posColumn);
+				utAddStr(uColumn, "OPERATE_TYPE", sType);
+				L4C_TRACE("比较列%s",sColumnName);
+				switch(utGetType(pQryHisRow, sColumnName)){
+					case U_INT:
+						_ADDIN2(Int)
+					case U_LONG:
+							_ADDIN2(Long)
+					case U_DOUBLE:
+								_ADDIN2(Double)
+					case U_STRING:{
+							      switch(sType[0]){
+								      case 'U':{
+										       if(strcmp(utGetStr(pQryOrgRow, sColumnName),utGetStr(pQryHisRow, sColumnName))!=0){\
+											       _ADDIN1(Str)
+										       }
+										       break;
+									       }
+								      case 'I':{
+										       _ADDIN1(Str)
+											       break;
+									       }
+								      case 'D':{
+										       _ADDIN0(Str)
+											       break;
+									       }
+								      default:
+									       throw(appException(399000505, "未知操作类型[%s]", sType,NULL));
+							      }
+							      break;
+						      }
+					default:
+								throw(appException(399000506, "未知的数据类型"));
+				}
+				if(utFind(uColumn, "NAME")!=UPOS_END)
+					utAddStruct(uRow, "COLUMN", uColumn.release());
+			}
+			if(uRow->cnt!=0)
+				utAddStruct(uResultSet, "ROW", uRow.release());
+		}
+		if(uResultSet->cnt!=0)
+			utAddStruct(pout, "RESULT_SET", uResultSet.release());
+	}
+
+
+	return pout.release();
+
+}
+
+utype* pubBusiRule(const utype* puParamIn, TCtrlInfo* errInfo)
+{
+	return doBusiRule(utGetInt(puParamIn, "RULE_ID"), utGetStruct(puParamIn, "IN_DATA"), errInfo);
+}
+
+
+utype* pDynSvc(const utype *inparam, TCtrlInfo *ptCtrlInfo)
+{
+
+	uAutoPtr pp(uInit(2)), pIn(utClone(inparam));
+	char sDynStatement[1024];
+
+	L4C_TRACE("fetch sql");
+	otl_nocommit_stream getStatement(10,"select dyn_statement from bs_DynSrv_dict where svc_name =:svc_name<char[40]> and qm_type='0'", GETDB(ptCtrlInfo));
+	utGetStr(inparam,"SVC_NAME");
+	getStatement << utGetStr(inparam,"SVC_NAME");
+	if(getStatement.eof()){
+		throw(appException(399000601, "指定的sql语句不存在"));
+	}
+	getStatement>>sDynStatement;
+	L4C_TRACE("parse sql[%s]",sDynStatement);
+	utAddStr(pp, "__SQL", sDynStatement);
+	utAddStruct(pp, "IN_DATA", pIn.release());
+	return pubQuerySql(pp, ptCtrlInfo);
+}
+
+
+utype* pubServAddNum(const utype* p, TCtrlInfo* errInfo)
+{
+	uAutoPtr pout(uInit(10));
+	const char* sServAddNum=utGetStr(p, "ADD_SERVICE_NO");
+	otl_nocommit_stream qServAddNum;
+	char sSQL[1024];
+	sprintf(sSQL, "select id_no,phone_no from ur_ServAddNum_info where ADD_SERVICE_NO=:ASN<char[50+1]> ~and ADD_NBR_TYPE=:ANT<char[2+1]>");
+	char* sTag=strchr(sSQL, '~');
+	if(utFind(p, "ADD_NBR_TYPE")!=UPOS_END){
+		*sTag=' ';
+		qServAddNum.open(1, sSQL, GETDB(errInfo));
+		qServAddNum<<sServAddNum<<utGetStr(p, "ADD_NBR_TYPE");
+	}else{
+		*sTag=0;
+		qServAddNum.open(1, sSQL, GETDB(errInfo));
+		qServAddNum<<sServAddNum;
+	}
+	while(!qServAddNum.eof()){
+		long lIdNo;
+		char sPhoneNo[40+1];
+		uAutoPtr pp(uInit(2));
+		qServAddNum>>lIdNo>>sPhoneNo;
+		utAddLong(pp, "ID_NO", lIdNo);
+		utAddStr(pp, "PHONE_NO", sPhoneNo);
+		utAddStruct(pout, "USER_ARRAY", pp.release());
+	}
+	return pout.release();
+}
+
+
+
+int pubServiceNoInfoHashCode(const char* sServAddNum)
+{
+	char h,l;
+	size_t len=strlen(sServAddNum);
+	if(len<2) h=0;
+	else h=sServAddNum[len-2]%10;
+	if(len<1) l=0;
+	else l=sServAddNum[len-1]%10;
+	return (int)(h*10+l);
+}
+
+
+utype* pubServiceNoInfo(const utype* p, TCtrlInfo* errInfo)
+{
+	uAutoPtr pout(uInit(10));
+	const char* sServAddNum=utGetStr(p, "SERVICE_NO");
+	otl_nocommit_stream qServiceNoInfo;
+	char sSQL[1024];
+	sprintf(sSQL, "select ID_NO,SERVICE_NO,SERVICE_TYPE,MASTER_SERV_ID from ur_ServiceNo_info_%02d where SERVICE_NO=:ASN<char[50+1]>", pubServiceNoInfoHashCode(sServAddNum));
+
+	L4C_TRACE("\n\n Hash_Value=[%d] \n\n", pubServiceNoInfoHashCode(sServAddNum));
+
+	qServiceNoInfo.open(1, sSQL, GETDB(errInfo));
+	qServiceNoInfo<<sServAddNum;
+
+	while(!qServiceNoInfo.eof())
+	{
+		long lIdNo;
+		char sServiceNo[50+1];
+		char sServiceType[2+1];
+		char sMasterServId[8+1];
+		uAutoPtr pp(uInit(2));
+		qServiceNoInfo>>lIdNo>>sServiceNo>>sServiceType>>sMasterServId;
+		utAddLong(pp, "ID_NO", lIdNo);
+		utAddStr(pp, "SERVICE_NO", sServiceNo);
+		utAddStr(pp, "SERVICE_TYPE", sServiceType);
+		utAddStr(pp, "MASTER_SERV_ID", sMasterServId);
+		utAddStruct(pout, "USER_ARRAY", pp.release());
+	}
+	return pout.release();
+}
+
+
+

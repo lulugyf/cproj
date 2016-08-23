@@ -1,0 +1,32 @@
+{
+	"ROOT": {
+		"HEADER": {
+			"POOL_ID": "pool_123",
+			"DB_ID": "crmdba",
+			"ENV_ID": "abcdef",
+			"ROUTING": {
+				"ROUTE_KEY": 10,
+				"ROUTE_VALUE": "15888888888"
+			}
+		},
+		"BODY": {
+			"REQUEST_INFO": {
+				"OPR_INFO": {
+					"REGION_ID": 11,
+					"CHANNEL_TYPE": "0001",
+					"LOGIN_NO": "Y18600IVR",
+					"LOGIN_PWD": "123",
+					"IP_ADDRESS": "127.0.0.1",
+					"GROUP_ID": 100000,
+					"CONTACT_ID": 100000,
+					"OP_CODE": "1234"
+				},
+				"BUSI_INFO_LIST": {
+					"BUSI_INFO": {
+						"PROD_ID": "CPX004"
+					}
+				}
+			}
+		}
+	}
+}

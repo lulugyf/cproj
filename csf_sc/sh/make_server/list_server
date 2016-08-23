@@ -1,0 +1,10 @@
+run/framework/src/score/server
+run/framework/src/public/server
+run/framework/src/basemng/server
+run/framework/src/custmng/server
+run/framework/src/custsvc/server
+run/framework/src/custview/server
+run/framework/src/market/server
+run/framework/src/oneboss/server
+run/framework/src/ordersvc/server
+run/framework/src/prodmng/server

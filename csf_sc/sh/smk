@@ -1,0 +1,41 @@
+if [ "$#" != "1" ] 
+then
+        echo "脚本的用法如下:"
+        echo "usage: smk RRouteInfo.cpp      表示编译单个server"
+        echo "usage: smk all                 表示编译当前目录下所有的server"
+else
+        indexofsplit=`echo ${1}|awk '{n=index($0, "/");print n}'`
+        echo ${indexofsplit}
+        if [ "${indexofsplit}" != "0" ]
+        then
+                filepath=`echo ${1}|awk '{
+                ns = length($0)
+                nf = length("/")
+                for(k=ns+1-nf;k>=1;k--)
+                if(substr($0,k,nf)=="/")
+                {
+                        print substr($0, 0, k-1)
+                        break
+                }
+        }'`
+
+        echo $filepath
+                filename=`echo ${1}|awk '{
+                ns = length($0)
+                nf = length("/")
+                for(k=ns+1-nf;k>=1;k--)
+                if(substr($0,k,nf)=="/")
+                {
+                        print substr($0, k + 1)
+                        break
+                }
+        }'`
+        cd ${filepath}
+        
+        else
+                filename=$1
+        fi
+        echo $filename
+        echo `pwd`
+        cpsmake.sh 1 $filename
+fi

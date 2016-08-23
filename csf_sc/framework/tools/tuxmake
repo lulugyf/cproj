@@ -1,0 +1,39 @@
+#!/bin/sh
+#set -x
+print_usage()
+{
+  echo "========================================================"
+  echo "tuxmake--服务自动编译脚本";
+  echo
+  echo "Usage: tuxmake 服务名";
+  echo
+  echo "例:tuxmake RCustMsg";
+  echo "========================================================"
+}
+
+SRV_NAME=$1
+
+if [ -z "$1" ] ; then
+  print_usage;
+  exit;
+fi
+
+if [ ! -r "${SRV_NAME}.dep" ] ; then
+	echo "file [${SRV_NAME}.dep] no found!"
+  exit;
+fi
+
+DEP=`cat ${SRV_NAME}.dep`
+echo ${DEP}
+
+#SVS=`grep void ${SRV_NAME}.cpp | tr -s "(" " " | awk '($4 ~/^[s]/) {printf("-s %s ", $4)}'`
+SVS=`grep void ${SRV_NAME}.cpp | tr -s "(" " " | awk '{if($5=="TPSVCINFO") {printf("-s %s ", $4)}}'`
+
+echo ${SVS}
+
+if [ "$2" = "" ] ; then
+  make -f ${HOME}/run/framework/tools/svc.mk NOORDER SRV_NAME=${SRV_NAME} DEP="${DEP}" SVS="${SVS}"
+ else
+  make -f ${HOME}/run/framework/tools/svc.mk ORDER SRV_NAME=${SRV_NAME} DEP="${DEP}" SVS="${SVS}"
+fi
+

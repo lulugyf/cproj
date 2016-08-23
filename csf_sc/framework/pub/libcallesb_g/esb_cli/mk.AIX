@@ -1,0 +1,37 @@
+.SUFFIXES: .pc .cpp .c .o
+#CXX=gcc -g 
+#CXXX=g++ -g
+CXX=xlc_r -g -q64 -brtl -qcpluscmt -ma -qlanglvl=extended  -D_LIUPENGC_   
+#CXX=cc +DD64
+CXXX=xlc++_r -g -q64 -brtl -qcpluscmt -ma -qlanglvl=extended  -D_LIUPENGC_ 
+CINC= -I.
+CLIB= -L./ -lesbgsoap 
+AR=ar -rv
+
+all: libesbgsoap.a
+a: libesbgsoap.a 
+b: demo
+c: libesbgsoap.so
+
+OBJS=soapC.o soapClient.o httppost.o stdsoap2.o esb_cli.o /usr/lib/libiconv.a
+libesbgsoap.a:$(OBJS)
+	$(AR) $@ $?
+
+libesbgsoap.so:$(OBJS) 
+	$(CXX) -G -o $@  $?
+demo:demo.o
+	$(CXXX)  -o $@  $?  $(CLIB)
+	
+main:main.o
+	$(CXX)  -o $@  $?  $(CLIB) 
+.cpp.o:
+	echo "Compiling the $<"
+	$(CXXX) -c $(CINC) $<
+.c.o:
+	echo "Compiling the $<"
+	$(CXX) -c $(CINC) $<
+clean:
+	rm -f *.o core* *.a
+### $< 第一个依赖文件的名称;
+### $@ 目标的完成名称
+### $? 所有的依赖文件

@@ -1,0 +1,8 @@
+<ROOT>
+	<HEADER>
+			<pool_id type="string">a123</pool_id>
+	</HEADER>
+	<BODY>
+		<phone_no type="string">15812345678</phone_no>
+	</BODY>
+</ROOT>

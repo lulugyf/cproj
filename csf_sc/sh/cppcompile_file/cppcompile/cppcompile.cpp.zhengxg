@@ -1,0 +1,1263 @@
+#include "cppcompile.h"
+
+static const char *psSrcCppFileName = NULL;	//文件名
+static char sSrcCppBaseFileName[1024];		//不带扩展名的文件名。
+static const char *psSrcCppPathName = NULL;	//源文件所在的路径
+
+static const char *psEscFuncFileName = NULL;	//过滤函数的文件名
+static char *psSrcCppFileContent = NULL;	//文件内容。
+static const char *psDbLoginString = NULL;	//数据库登录串。格式“user/password@db”。
+static otl_connect *db = NULL;
+char sCurrTime[14+1];					//当前时间，格式“YYYYMMDDHH24MISS”。
+static bool bIsMiddwareService=false;			//是否中间件服务。
+static bool bIsPrintDependSo=false;			//是否打印依赖库。
+static bool bIsNotCheckConflictFileName=false;		//是否检查冲突的文件名。
+
+
+#define DEF_ESC_FUNC_FILE_NAME "EscFuncFile.txt"
+// ---------------------------------------------------------------------------
+//
+//  Usage()
+//
+// ---------------------------------------------------------------------------
+void Usage()
+{
+	printf("\nUsage:\n"
+		"    cppcompile [options]  cppfile>\n\n"
+		"comment:\n"
+		"	编译一个文件。\n\n"
+		"Options:\n"
+		"    -nc   是否检查冲突的文件名，加上此选项则不检查.\n"
+		"    -isservice=no   制定是否是中间件 service，取值范围yes或no.\n"
+		"    -pdepso=no   是否打印依赖库，取值范围yes或no.\n"
+		"    -path=xxx   源文件所在的路径.\n"
+		"    -esc=FileName   过滤函数的文件名，默认“EscFuncFile.txt”.\n"
+		"    -dbstr=psDbLoginString   数据库登录串，必填。格式“user/password@db”.\n"
+		"    -?          显示帮助.\n\n"
+		"version: \n"
+		"	1.0.2\n\n"
+		"author: \n"
+		"	lugz\n\n"
+		"\n");
+}
+
+int AnalyseMainOption(int argc, char* argv[])
+{
+	if (argc < 2)
+	{
+		Usage();
+		return 1;
+	}
+
+	bool bFoundIsService = false;
+	bool bFoundIsPrintDependSo = false;
+	int iParamPos;
+	for (iParamPos = 1; iParamPos < argc; iParamPos++)
+	{
+		if (argv[iParamPos][0] != '-')
+			break;
+
+		if (!strcmp(argv[iParamPos], "-?"))
+		{
+			Usage();
+			return 1;
+		}
+		else if (!strncmp(argv[iParamPos], "-nc", 3))
+		{
+			bIsNotCheckConflictFileName = true;
+		}
+		else if (!strncmp(argv[iParamPos], "-path=", 6))
+		{
+			psSrcCppPathName = argv[iParamPos] + 6;
+		}
+		else if (!strncmp(argv[iParamPos], "-esc=", 5))
+		{
+			psEscFuncFileName = argv[iParamPos] + 5;
+		}
+		else if (!strncmp(argv[iParamPos], "-dbstr=", 7))
+		{
+			psDbLoginString = argv[iParamPos] + 7;
+		}
+		else if (!strncmp(argv[iParamPos], "-isservice=", 11))
+		{
+			bFoundIsService = true;
+			if (strncmp(argv[iParamPos] + 11, "yes", 3) == 0)
+			{
+				bIsMiddwareService = true;
+			}
+			else if (strncmp(argv[iParamPos] + 11, "no", 2) == 0)
+			{
+				bIsMiddwareService = false;
+			}
+			else
+			{
+				Usage();
+				return 1;
+			}
+		}
+		else if (!strncmp(argv[iParamPos], "-pdepso=", 8))
+		{
+			bFoundIsPrintDependSo = true;
+			if (strncmp(argv[iParamPos] + 8, "yes", 3) == 0)
+			{
+				bIsPrintDependSo = true;
+			}
+			else if (strncmp(argv[iParamPos] + 8, "no", 2) == 0)
+			{
+				bIsPrintDependSo = false;
+			}
+			else
+			{
+				Usage();
+				return 1;
+			}
+		}
+		else
+		{
+			Usage();
+			return 1;
+		}
+	}
+
+	if (psSrcCppPathName == NULL)
+	{
+		Usage();
+		return 1;
+	}
+
+	if (psEscFuncFileName == NULL)
+	{
+		psEscFuncFileName = DEF_ESC_FUNC_FILE_NAME;
+	}
+
+	if (psDbLoginString == NULL)
+	{
+		Usage();
+		return 1;
+	}
+
+	if (!bFoundIsService)
+	{
+		Usage();
+		return 1;
+	}
+
+	if (!bFoundIsPrintDependSo)
+	{
+		Usage();
+		return 1;
+	}
+	
+	if (iParamPos + 1 != argc)
+    {
+        Usage();
+        return 1;
+    }
+	psSrcCppFileName = argv[iParamPos];
+
+	memset(sSrcCppBaseFileName, 0, sizeof(sSrcCppBaseFileName));
+	const char *p = strchr(psSrcCppFileName, '.');
+	if (p == NULL)
+	{
+		strcpy(sSrcCppBaseFileName, psSrcCppFileName);
+	}
+	else
+	{
+		strncpy(sSrcCppBaseFileName, psSrcCppFileName, p - psSrcCppFileName);
+	}
+
+	return 0;
+}
+
+/**
+ *     替换C程序函数内部的注释为指定字符。
+ */
+void ClearComment(char* srcStream, int c)
+{
+	int commentFlag = -1;
+	int i;
+	int inLen;
+
+	if (srcStream == NULL) return;
+	inLen=(int)strlen(srcStream);
+	if (inLen <= 2 )
+	{
+		return;
+	}
+	
+	i = 0;
+	while(i < inLen)
+	{
+		if (commentFlag == -1)
+		{
+			if (srcStream[i] == '/' && srcStream[i+1] == '*')
+			{
+				/*原来不在备注内，现进入备注*/
+				commentFlag = i;
+				i ++;
+			}
+		}
+		else
+		{
+			if (commentFlag != -1)
+			{
+				if (srcStream[i] == '*' && srcStream[i+1] == '/')
+				{
+					srcStream[commentFlag] = c;
+					srcStream[commentFlag+1] = c;
+
+					srcStream[i] = c;
+					srcStream[i+1] = c;
+
+					commentFlag = -1;
+
+					i ++;
+				}
+				else
+				{
+					srcStream[i] = c;
+				}
+			}
+		}
+
+		i ++;
+	}
+
+	i = 0;
+	while(i < inLen)
+	{
+		if (commentFlag == -1)
+		{
+			if (srcStream[i] == '/' && srcStream[i+1] == '/')
+			{
+				/*原来不在备注内，现进入备注*/
+				commentFlag = i;
+
+				srcStream[i] = c;
+				srcStream[i+1] = c;
+				i ++;
+			}
+		}
+		else
+		{
+			if (commentFlag != -1)
+			{
+				
+				if (srcStream[i] == '\n')
+				{
+					commentFlag = -1;
+				}
+				else
+				{
+					srcStream[i] = c;
+				}
+			}
+		}
+		i ++;
+	}
+}
+
+/**
+ *     替换转义字符，为指定字符。
+ */
+void ClearEsc(char* srcStream, int c)
+{
+	int i;
+	int inLen;
+
+	if (srcStream == NULL) return;
+	inLen=(int)strlen(srcStream);
+	if (inLen <= 2 )
+	{
+		return;
+	}
+	
+	i = 0;
+	while(i < inLen)
+	{
+		if ((srcStream[i] == '\\') && (i != inLen - 1))
+		{
+			srcStream[i] = c;
+			srcStream[i+1] = c;
+			i ++;
+		}
+		i ++;
+	}
+}
+
+/**
+ *     清除引号中的内容。
+ */
+void ClearQuotationConent(char* srcStream, int c)
+{
+	int i;
+	int inLen;
+	bool isQuotationMark=false;
+
+	if (srcStream == NULL) return;
+	inLen=(int)strlen(srcStream);
+	if (inLen <= 2 )
+	{
+		return;
+	}
+	
+	//清除双引号"
+	i = 0;
+	while(i < inLen)
+	{
+		if (srcStream[i] == '\"')
+		{
+			isQuotationMark = !isQuotationMark;
+		}
+		else
+		{
+			if (isQuotationMark)
+			{
+				srcStream[i] = c;
+			}
+		}
+		i ++;
+	}
+
+	//清除单引号'
+	i = 0;
+	while(i < inLen)
+	{
+		if (srcStream[i] == '\'')
+		{
+			isQuotationMark = !isQuotationMark;
+		}
+		else
+		{
+			if (isQuotationMark)
+			{
+				srcStream[i] = c;
+			}
+		}
+		i ++;
+	}
+}
+
+/**
+ *     清除预定义行，如#include, #define等以“#”开头的语句。
+ */
+void ClearPoundSignStmt(char* srcStream, int c)
+{
+	int i;
+	int inLen;
+
+	if (srcStream == NULL) return;
+	inLen=(int)strlen(srcStream);
+	if (inLen <= 2 )
+	{
+		return;
+	}
+	
+	i = 0;
+	while(i < inLen)
+	{
+		if (srcStream[i] == '#')
+		{
+			while((i < inLen) && (srcStream[i] != '\n'))
+			{
+				srcStream[i] = c;
+				i ++;
+			}
+		}
+		i ++;
+	}
+}
+
+
+void GetFileConent(int fhSrcCppFile)
+{
+	int iFileSize;
+	/* Set the end of the file: */
+#ifdef WIN32
+	iFileSize = _lseek( fhSrcCppFile, 0L, SEEK_END );
+#else
+	iFileSize = lseek( fhSrcCppFile, 0L, SEEK_END );
+#endif
+
+#ifdef WIN32
+	_lseek( fhSrcCppFile, 0L, SEEK_SET );
+#else
+	lseek( fhSrcCppFile, 0L, SEEK_SET );
+#endif
+	if (iFileSize == 0)
+	{
+		throw BaseExcept(1, "文件[%s]内容为空！\n", psSrcCppFileName);
+	}
+	else
+	{
+		psSrcCppFileContent = (char *)malloc(iFileSize + 1);
+		memset(psSrcCppFileContent, 0, iFileSize + 1);
+
+#ifdef WIN32
+		int iRealRead = _read(fhSrcCppFile, (void*)psSrcCppFileContent, iFileSize);
+#else
+		int iRealRead = read(fhSrcCppFile, (void*)psSrcCppFileContent, iFileSize);
+#endif
+		psSrcCppFileContent[iRealRead] = '\0';
+
+		ClearComment(psSrcCppFileContent, ' ');
+		ClearEsc(psSrcCppFileContent, ' ');
+		ClearQuotationConent(psSrcCppFileContent, ' ');
+		ClearPoundSignStmt(psSrcCppFileContent, ' ');
+	}
+}
+
+///前一个字符
+inline char PreChar(const char* srcStream, int iPos)
+{
+	if (iPos != 0)
+	{
+		return srcStream[iPos - 1];
+	}
+	else
+	{
+		return 0;	//返回空字符。
+	}
+}
+
+///查找前一个字符
+inline const char* FindPreChar(const char* srcStream, int iPos, int c)
+{
+	while (iPos >= 0)
+	{
+		if (srcStream[iPos] == c)
+		{
+			return srcStream + iPos;
+		}
+		iPos --;
+	}
+	return NULL;
+}
+
+
+///下一个字符
+inline char NextChar(const char* srcStream, int iPos, int inLen)
+{
+	if (iPos < inLen - 1)
+	{
+		return srcStream[iPos + 1];
+	}
+	else
+	{
+		return 0;	//返回空字符。
+	}
+}
+
+///是一个合法的变量字符。
+inline bool IsLiteralChar(int c)
+{
+	if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c == '_'))
+	{
+		return true;
+	}
+	return false;
+}
+
+///得到前一个单词
+///iPos包含本位置。
+///成功返回单词的前一个位置。
+inline int GetPreWord(const char* srcStream, int iPos, char *psWord)
+{
+	while(iPos >= 0)
+	{
+		if (isspace(srcStream[iPos]))
+		{
+			iPos --;
+			continue;
+		}
+		break;
+	}
+
+	int iEnd = iPos;
+	if (iPos >=0)
+	{
+		bool bIsLiteralWord = IsLiteralChar(srcStream[iPos]);
+		
+		while(iPos >= 0)
+		{
+			if (!isspace(srcStream[iPos]))
+			{
+				if (bIsLiteralWord != IsLiteralChar(srcStream[iPos]))
+				{
+					break;
+				}
+				else if (!bIsLiteralWord)
+				{
+					iPos --;
+					break;
+				}
+				iPos --;
+				continue;
+			}
+			break;
+		}
+		if (iPos < 0)
+		{
+			strncpy(psWord, srcStream, iEnd + 1);
+			psWord[iEnd] = '\0';
+		}
+		else
+		{
+			strncpy(psWord, srcStream + iPos + 1, iEnd - iPos);
+			psWord[iEnd - iPos] = '\0';
+		}
+	}
+
+	return iPos;
+}
+
+bool ValidBusiFunc(const char *psCallFuncName, std::list<std::string> &lstEscFunc)
+{
+	std::list<std::string>::iterator iterEscFunc;
+
+	for(iterEscFunc = lstEscFunc.begin(); iterEscFunc != lstEscFunc.end(); iterEscFunc ++)
+	{
+		if (strcmp(psCallFuncName, (*iterEscFunc).c_str()) == 0)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+inline void AddCallFunc(std::string &sFuncCallName, std::string &sFuncDefName, std::list<StringPair> &lstFuncCall,
+	std::list<std::string> &lstEscFunc)
+{
+	if (ValidBusiFunc(sFuncCallName.c_str(), lstEscFunc))
+	{
+		bool bFound = false;
+		std::list<StringPair>::iterator iterFuncCall;
+		for(iterFuncCall = lstFuncCall.begin(); iterFuncCall != lstFuncCall.end(); iterFuncCall ++)
+		{
+			if (((*iterFuncCall).first.compare(sFuncDefName) == 0))
+			{
+				if (((*iterFuncCall).second.compare(sFuncCallName) == 0))
+				{
+					bFound = true;
+					break;
+				}
+			}
+		}
+
+		if (!bFound)
+		{
+			lstFuncCall.push_back(StringPair(sFuncDefName, sFuncCallName));
+		}
+	}
+}
+
+void AddMiddwareServiceCallBackFunc(const char* srcStream, int iLeftParenthesisPos, std::list<std::string> &lstFuncDef, std::list<StringPair> &lstFuncCall,
+	std::list<std::string> &lstEscFunc, std::string &sFuncDefName, std::string &sFuncCallName)
+{
+	char sLine[512];
+	int iPos;
+	char sWord[512];
+
+	memset(sWord, 0, sizeof(sWord));
+	if ((sFuncCallName.compare("tuxadp") == 0)||
+		(sFuncCallName.compare("TUXADP") == 0)||
+		(sFuncCallName.compare("tuxadpEx") == 0)||
+		(sFuncCallName.compare("TUXADPEX") == 0))
+	{
+		memset(sLine, 0, sizeof(sLine));
+		const char *psSemicolon= strchr(srcStream + iLeftParenthesisPos, ';');
+		if (psSemicolon == NULL)
+		{
+			throw BaseExcept(1, "函数 %s 没有正常结束", sFuncCallName.c_str());
+		}
+		const char *psComma = strchr(srcStream + iLeftParenthesisPos, ',');
+		int iCommaCount = 0;
+		while(psComma)
+		{
+			iCommaCount ++;
+			psComma = strchr(psComma + 1, ',');
+			if (psComma > psSemicolon)
+			{
+				break;
+			}
+			else if (iCommaCount == 4)
+			{
+				break;
+			}
+		}
+											
+		if ((iCommaCount == 4)&&(psComma < psSemicolon))
+		{
+			if ( (iPos = GetPreWord(srcStream, psComma - srcStream - 1, sWord)) < 0)
+			{
+				throw BaseExcept(1, "得到中间件回调函数的名称出错");
+			}
+			std::string sCallBackFunctionName;
+			sCallBackFunctionName = sWord; 
+			AddCallFunc(sCallBackFunctionName, sFuncDefName, lstFuncCall, lstEscFunc);
+		}
+	}
+}
+
+
+/**
+ *  得到依赖的动态链接库字符串。
+ */
+void AddFuncDef(std::list<std::string> &lstFuncDef, std::string &sFuncDefName)
+{
+	std::list<std::string>::iterator iterDependSo;
+	bool bIsFound = false;
+	for(iterDependSo = lstFuncDef.begin(); iterDependSo != lstFuncDef.end(); iterDependSo ++)
+	{
+		if (iterDependSo->compare(sFuncDefName) == 0)
+		{
+			bIsFound = true;
+		}
+	}
+
+	if (!bIsFound)
+	{
+		lstFuncDef.push_back(sFuncDefName);
+	}
+}
+
+/**
+ * 函数定义定义原则，参考规则1和规则二：
+ *     （1）type func (type value, ...) {}
+ *     （2）考虑 “type func (type value, ...) throw (...){}”这种异常等类的定义。
+ *     （3）考虑 “type func (type value, ...) const{}”这种常量函数的定义。
+ */
+void DealStream(const char* srcStream, std::list<std::string> &lstFuncDef, std::list<StringPair> &lstFuncCall,
+	std::list<std::string> &lstEscFunc)
+{
+	int i = 0, iFuncDeep=0, j = 0, iPos;
+	const char *p;
+	bool isQuotationMark=false, bIsFunc=false;
+	char sWord[512];
+	std::string sFuncDefName, sFuncCallName;
+
+	if (srcStream == NULL) return;
+	int inLen=(int)strlen(srcStream);
+	if (inLen < 2 )
+	{
+		return;
+	}
+
+	i = 0;
+	while (i < inLen)
+	{
+		if ((srcStream[i] == '\"') && PreChar(srcStream, i) != '\\')
+		{
+			isQuotationMark = !isQuotationMark;
+		}
+
+		if (!isQuotationMark)
+		{
+			if (iFuncDeep == 0)	//函数外面
+			{
+				if (srcStream[i] == '{')
+				{
+					iFuncDeep ++;
+				
+					if ( (iPos = GetPreWord(srcStream, i - 1, sWord)) < 0)
+					{
+						throw BaseExcept(1, "分析函数失败1");
+					}
+					
+					if (strcmp(sWord, ")") == 0)
+					{
+						p = FindPreChar(srcStream, iPos, '(');
+						if (!p)
+						{
+							throw BaseExcept(1, "分析函数失败2");
+						}
+
+						if ( (iPos = GetPreWord(srcStream,  p - srcStream - 1, sWord)) < 0)
+						{
+							throw BaseExcept(1, "分析函数失败3");
+						}
+
+						if (strcmp(sWord, "throw") == 0)	//分析规则2.
+						{
+							//异常信息。
+							p = FindPreChar(srcStream, iPos, '(');
+							if (!p)
+							{
+								throw BaseExcept(1, "分析函数失败4");
+							}
+
+							if ( (iPos = GetPreWord(srcStream, p - srcStream - 1, sWord)) < 0)
+							{
+								throw BaseExcept(1, "分析函数失败5");
+							}
+						}
+
+						bIsFunc = true;
+						//sWord是函数定义的名字。
+						sFuncDefName = sWord;
+						AddFuncDef(lstFuncDef, sFuncDefName);
+					}
+					else
+					{
+						if ( (iPos = GetPreWord(srcStream, i - 1, sWord)) < 0)
+						{
+							throw BaseExcept(1, "分析函数失败6");
+						}
+
+						if (strcmp(sWord, "const") == 0)  //分析规则3.
+						{
+							p = FindPreChar(srcStream, iPos, '(');
+							if (!p)
+							{
+								throw BaseExcept(1, "分析函数失败7");
+							}
+
+							if ( (iPos = GetPreWord(srcStream, p - srcStream - 1, sWord)) < 0)
+							{
+								throw BaseExcept(1, "分析函数失败8");
+							}
+
+							bIsFunc = true;
+							//sWord是函数定义。
+							sFuncDefName = sWord;
+							AddFuncDef(lstFuncDef, sFuncDefName);
+						}
+						else
+						{
+							//不是函数。
+							bIsFunc = false;
+						}
+					}
+				}
+
+				if (srcStream[i] == '}')
+				{
+					iFuncDeep --;
+					if (iFuncDeep == 0)
+					{
+						//不是函数。
+						bIsFunc = false;
+					}
+				}
+			}
+			else
+			{
+				if (srcStream[i] == '{')
+				{
+					iFuncDeep ++;
+				}
+				else if (srcStream[i] == '}')
+				{
+					iFuncDeep --;
+					if (iFuncDeep == 0)
+					{
+						//不是函数。
+						bIsFunc = false;
+					}
+				}
+				else if (bIsFunc)
+				{
+					//处理函数里面的信息。
+					if (srcStream[i] == '(')	//判断是否调用了函数。
+					{
+						if ( (iPos = GetPreWord(srcStream, i - 1, sWord)) < 0)
+						{
+							throw BaseExcept(1, "分析函数失败9");
+						}
+
+						if (IsLiteralChar(sWord[0]))
+						{
+							sFuncCallName = sWord;
+
+							if ( (iPos = GetPreWord(srcStream, iPos, sWord)) < 0)
+							{
+								throw BaseExcept(1, "分析函数失败10");
+							}
+
+							if (sWord[0] == '.')
+							{
+								//过滤成员函数。
+							}
+							else if (sWord[0] == '>')
+							{
+								if (srcStream[iPos] == '-')
+								{
+									//过滤成员函数。
+								}
+								else
+								{
+									AddCallFunc(sFuncCallName, sFuncDefName, lstFuncCall, lstEscFunc);
+									//中间件服务，还需要查找回调函数。
+									if (bIsMiddwareService)
+									{
+										AddMiddwareServiceCallBackFunc(srcStream, i, lstFuncDef, lstFuncCall,
+											lstEscFunc, sFuncDefName, sFuncCallName);
+									}
+								}
+							}
+							else if (IsLiteralChar(sWord[0]))
+							{
+								//是C++的构造函数，过滤掉。
+							}
+							else
+							{
+								AddCallFunc(sFuncCallName, sFuncDefName, lstFuncCall, lstEscFunc);
+								//中间件服务，还需要查找回调函数。
+								if (bIsMiddwareService)
+								{
+									AddMiddwareServiceCallBackFunc(srcStream, i, lstFuncDef, lstFuncCall,
+										lstEscFunc, sFuncDefName, sFuncCallName);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		i ++;
+	}
+}
+
+/**
+ *  更新数据库中的信息。
+ */
+void RefreshCppInfo(std::list<std::string> &lstFuncDef, std::list<StringPair> &lstFuncCall)
+{
+	otl_nocommit_stream otlstream;
+	otlstream.set_flush(false);
+	try
+	{
+		//删除表cp_cppcall_dict
+		otlstream.open(1, "delete from cp_cppcall_dict where cpp_name=:cpp_name<char[100+1]> and data_source = :data_source<char[20+1]>", *db);
+		otlstream<<psSrcCppFileName<<CPPCOMPILE_DATA_SOURCE;
+		otlstream.flush();
+		otlstream.close();
+
+		//删除表cp_deffunc_rela
+		otlstream.open(1, "delete from cp_deffunc_rela where cpp_name=:cpp_name<char[100+1]> and data_source = :data_source<char[20+1]>", *db);
+		otlstream<<psSrcCppFileName<<CPPCOMPILE_DATA_SOURCE;
+		otlstream.flush();
+		otlstream.close();
+
+		//删除表cp_cpp_dict
+		otlstream.open(1, "delete from cp_cpp_dict where cpp_name=:cpp_name<char[100+1]> and data_source = :data_source<char[20+1]>", *db);
+		otlstream<<psSrcCppFileName<<CPPCOMPILE_DATA_SOURCE;
+		otlstream.flush();
+		otlstream.close();
+
+		//插入表cp_cpp_dict
+		otlstream.open(1, "insert into cp_cpp_dict"
+						  "("
+						  " cpp_name, so_name, cpp_path, update_time, data_source"
+						  ")"
+						  "values"
+						  "("
+						  " :cpp_name<char[100+1]>, 'lib'||:cpp_base_name<char[100+1]>||'.so', :cpp_path<char[255+1]>, to_date(:update_time<char[14+1]>,'YYYYMMDDHH24MISS'), :data_source<char[20+1]>"
+						  ")", *db);
+		otlstream<<psSrcCppFileName;
+		otlstream<<sSrcCppBaseFileName;
+		otlstream<<psSrcCppPathName;
+		otlstream<<sCurrTime;
+		otlstream<<CPPCOMPILE_DATA_SOURCE;
+		otlstream.flush();
+		otlstream.close();
+
+		//插入表cp_deffunc_rela
+		otlstream.open(lstFuncDef.size(), "insert into cp_deffunc_rela"
+						  "("
+						  " cpp_name, so_name, define_function, update_time, data_source"
+						  ")"
+						  "values"
+						  "("
+						  " :cpp_name<char[100+1]>, 'lib'||:cpp_base_name<char[100+1]>||'.so', :define_function<char[100+1]>, to_date(:update_time<char[14+1]>,'YYYYMMDDHH24MISS'), :data_source<char[20+1]>"
+						  ")", *db);
+		std::list<std::string>::iterator iterFuncDef;
+		for(iterFuncDef = lstFuncDef.begin(); iterFuncDef != lstFuncDef.end(); iterFuncDef ++)
+		{
+			otlstream<<psSrcCppFileName;
+			otlstream<<sSrcCppBaseFileName;
+			otlstream<< (*iterFuncDef).c_str();
+			otlstream<<sCurrTime;
+			otlstream<<CPPCOMPILE_DATA_SOURCE;
+		}
+		otlstream.flush();
+		otlstream.close();
+
+		//插入表cp_cppcall_dict
+		otlstream.open(lstFuncCall.size(), "insert into cp_cppcall_dict"
+						  "("
+						  " cpp_name, so_name, define_function, call_function, update_time, data_source"
+						  ")"
+						  "values"
+						  "("
+						  " :cpp_name<char[100+1]>, 'lib'||:cpp_base_name<char[100+1]>||'.so', :define_function<char[100+1]>, :call_function<char[100+1]>, to_date(:update_time<char[14+1]>,'YYYYMMDDHH24MISS'), :data_source<char[20+1]>"
+						  ")", *db);
+		std::list<StringPair>::iterator iterFuncCall;
+		for(iterFuncCall = lstFuncCall.begin(); iterFuncCall != lstFuncCall.end(); iterFuncCall ++)
+		{
+			otlstream<<psSrcCppFileName;
+			otlstream<<sSrcCppBaseFileName;
+			otlstream<< (*iterFuncCall).first.c_str();
+			otlstream<< (*iterFuncCall).second.c_str();
+			otlstream<<sCurrTime;
+			otlstream<<CPPCOMPILE_DATA_SOURCE;
+		}
+		otlstream.flush();
+		otlstream.close();
+	}
+	catch (otl_exception &otlErr)
+	{
+		throw BaseExcept(1, "操作数据库出错，错误代码：%d\n错误信息：%s", otlErr.code, otlErr.msg);
+		db->rollback();
+	}
+	db->commit();
+}
+
+/**
+ *  得到依赖的动态链接库列表。
+ */
+void GetDependSo(std::list<std::string> &lstDependSo)
+{
+	otl_nocommit_stream otlstream;
+	otlstream.set_flush(false);
+
+	char sSoName[100+1], sCppName[100+1],sSoNameOut[100+1], sCppNameOut[100+1];
+	memset(sCppName, 0, sizeof(sCppName));
+	memset(sSoName, 0, sizeof(sSoName));
+	memset(sSoNameOut, 0, sizeof(sSoNameOut));
+	memset(sCppNameOut, 0, sizeof(sCppNameOut));
+
+	strncpy(sCppName, psSrcCppFileName, 100);
+	strcpy(sSoName, "lib");
+	strcat(sSoName, sSrcCppBaseFileName);
+	strcat(sSoName, ".so");
+
+	std::list<StringPair> lstDependSoTmp1, lstDependSoTmp2;
+	try
+	{
+		otlstream.open(1, "select cpp_name, so_name"
+							"  from cp_cpp_dict"
+							" where so_name in (select so_name"
+							"                     from  cp_deffunc_rela"
+							"                    where define_function in (select call_function"
+							"                                                from cp_cppcall_dict"
+							"                                               where cpp_name = :cpp_name<char[100+1]>"
+							"                                                 and so_name = :so_name<char[100+1]>))"
+							"   and so_name != :so_name2<char[100+1]>", *db);
+		otlstream<<sCppName<<sSoName<<sSoName;
+		otlstream.flush();
+
+		while (!otlstream.eof())
+		{
+			otlstream>>sCppNameOut>>sSoNameOut;
+			lstDependSoTmp1.push_back(StringPair(std::string(sCppNameOut), std::string(sSoNameOut)));
+			lstDependSo.push_back(std::string(sSoNameOut));
+		}
+		otlstream.close();
+
+		std::list<StringPair>::iterator iterDependSo1, iterDependSo2;
+		while(1)
+		{
+			for(iterDependSo1 = lstDependSoTmp1.begin(); iterDependSo1 != lstDependSoTmp1.end(); iterDependSo1 ++)
+			{
+				otlstream.open(1, "select cpp_name, so_name"
+									"  from cp_cpp_dict"
+									" where so_name in (select so_name"
+									"                     from  cp_deffunc_rela"
+									"                    where define_function in (select call_function"
+									"                                                from cp_cppcall_dict"
+									"                                               where cpp_name = :cpp_name<char[100+1]>"
+									"                                                 and so_name = :so_name<char[100+1]>))"
+									"   and so_name != :so_name2<char[100+1]>", *db);
+				otlstream<<iterDependSo1->first.c_str()<<iterDependSo1->second.c_str()<<iterDependSo1->second.c_str();
+				otlstream.flush();
+
+				while (!otlstream.eof())
+				{
+					otlstream>>sCppNameOut>>sSoNameOut;
+					lstDependSoTmp2.push_back(StringPair(std::string(sCppNameOut), std::string(sSoNameOut)));
+				}
+				otlstream.close();
+			}
+
+			if (lstDependSoTmp2.empty())
+			{
+				break;
+			}
+			else
+			{
+				lstDependSoTmp1.clear();
+				bool bFound = false;
+				for(iterDependSo2 = lstDependSoTmp2.begin(); iterDependSo2 != lstDependSoTmp2.end(); iterDependSo2 ++)
+				{
+					bFound = false;
+					std::list<std::string>::iterator iterDependSo;
+					for(iterDependSo = lstDependSo.begin(); iterDependSo != lstDependSo.end(); iterDependSo ++)
+					{
+						if (iterDependSo2->second.compare(*iterDependSo) == 0)
+						{
+							bFound = true;
+						}
+					}
+					if (!bFound)
+					{
+						lstDependSo.push_back(std::string(iterDependSo2->second));
+						lstDependSoTmp1.push_back(StringPair(iterDependSo2->first, iterDependSo2->second));
+					}
+				}
+				lstDependSoTmp2.clear();
+			}
+		}
+	}
+	catch (otl_exception &otlErr)
+	{
+		throw BaseExcept(1, "操作数据库出错，错误代码：%d\n错误信息：%s", otlErr.code, otlErr.msg);
+		db->rollback();
+	}
+}
+
+/**
+ *  判读文件是否冲突，不同目录下有相同的文件名称。
+ */
+void CheckConflictFileName()
+{
+	otl_nocommit_stream otlstream;
+	otlstream.set_flush(false);
+
+	char sCppName[100+1], sSoName[100+1], sCppPath[255+1];
+	memset(sCppName, 0, sizeof(sCppName));
+	memset(sSoName, 0, sizeof(sSoName));
+	memset(sCppPath, 0, sizeof(sCppPath));
+
+	strncpy(sCppName, psSrcCppFileName, 100);
+	strcpy(sSoName, "lib");
+	strcat(sSoName, sSrcCppBaseFileName);
+	strcat(sSoName, ".so");
+
+	try
+	{
+		otlstream.open(1, "select cpp_path"
+						  "  from cp_cpp_dict"
+						  " where cpp_name = :cpp_name<char[100+1]>"
+						  "   and so_name = :so_name<char[100+1]>", *db);
+		otlstream<<sCppName<<sSoName;
+		otlstream.flush();
+
+		while (!otlstream.eof())
+		{
+			otlstream>>sCppPath;
+			if (strcmp(sCppPath, psSrcCppPathName) != 0)
+			{
+				throw BaseExcept(1, "目录%s下已经存在文件%s", sCppPath, sCppName);
+			}
+		}
+		otlstream.close();
+	}
+	catch (otl_exception &otlErr)
+	{
+		throw BaseExcept(1, "操作数据库出错，错误代码：%d\n错误信息：%s", otlErr.code, otlErr.msg);
+		db->rollback();
+	}
+}
+
+/**
+ *  得到依赖的动态链接库字符串。
+ */
+void GetDependSoString(std::list<std::string> &lstDependSo, std::string &sDependSoList)
+{
+	const char* ps= NULL;
+	std::list<std::string>::iterator iterDependSo;
+	for(iterDependSo = lstDependSo.begin(); iterDependSo != lstDependSo.end(); iterDependSo ++)
+	{
+		ps = strchr(iterDependSo->c_str(), '.');
+		if (ps)
+		{
+			if (strncmp(iterDependSo->c_str(), "lib", 3) ==0)
+			{
+				sDependSoList.append("-l");
+				sDependSoList.append(iterDependSo->c_str() + 3, ps - iterDependSo->c_str() - 3);
+				sDependSoList.append(" ");
+			}
+			else
+			{
+				throw BaseExcept(1, "错误的动态链接库名字：%s", iterDependSo->c_str());
+			}
+		}
+		else
+		{
+			throw BaseExcept(1, "错误的动态链接库名字：%s", iterDependSo->c_str());
+		}
+	}
+}
+
+void DealFile(std::list<std::string> &lstFuncDef, std::list<StringPair> &lstFuncCall,
+	std::list<std::string> &lstEscFunc)
+{
+	int fhSrcCppFile;
+#ifdef WIN32
+	if ( (fhSrcCppFile = _open( psSrcCppFileName, _O_RDONLY )) == -1)
+#else
+	if ( (fhSrcCppFile = open( psSrcCppFileName, O_RDONLY )) == -1)
+#endif
+	{
+		throw BaseExcept(1, "打开文件[%s]出错！\n", psSrcCppFileName);
+	}
+
+	GetFileConent(fhSrcCppFile);
+#ifdef WIN32
+	_close( fhSrcCppFile );
+#else
+	close( fhSrcCppFile );
+#endif
+
+	DealStream(psSrcCppFileContent, lstFuncDef, lstFuncCall, lstEscFunc);
+	RefreshCppInfo(lstFuncDef,lstFuncCall);
+	
+	if (bIsPrintDependSo)
+	{
+		std::list<std::string> lstDependSo;
+		GetDependSo(lstDependSo);
+
+		std::string sDependSoList;
+		GetDependSoString(lstDependSo, sDependSoList);
+		printf("DependSoList:%s\n", sDependSoList.c_str());
+	}
+}
+
+char* Trim(char *S)
+{
+	int I = 0, i = 0, L = 0;
+	
+	if (S == NULL)
+	{
+		return NULL;
+	}
+			
+	L = (int)(strlen(S) - 1);
+	I = 0;
+	while ( (I <= L) && (S[I] <= ' ') && (S[I] > 0) )
+	{
+		I ++;
+	}
+	if (I > L)
+	{
+		S[0] = '\0';
+	}
+	else
+	{
+		while ( (S[L] <= ' ')  && (S[L] > 0 ) )
+		{
+			L --;
+		}
+		strncpy(S, S + I, L + 1);
+		S[L + 1 - I] = '\0';
+	}
+	return S;
+}
+
+//读取过滤函数。
+void ReadEscFunc(const char* psFileName, std::list<std::string> &lstEscFunc)
+{
+	FILE *fp = NULL;
+
+	if ((fp = fopen(psFileName, "r")) == NULL)
+	{
+		throw BaseExcept(1, "打开过滤函数文件[%s]出错！\n", psFileName);
+	}
+	char sLine[512];
+	memset(sLine, 0, sizeof(sLine));
+	std::string sEscFunc;
+	while(fgets(sLine, 511, fp))
+	{
+		Trim(sLine);
+		sEscFunc = sLine;
+		lstEscFunc.push_back(sEscFunc);
+	}
+	fclose(fp);
+}
+
+void GetCurrTime()
+{
+	time_t tmCurrTime = time(NULL);
+	struct tm *timeinfo = localtime(&tmCurrTime);
+
+	char sIntStr[64];
+	memset(sIntStr, 0, sizeof(sIntStr));
+	sprintf(sIntStr, "%d", timeinfo->tm_year + 1900);
+	strcpy(sCurrTime, sIntStr);
+
+	memset(sIntStr, 0, sizeof(sIntStr));
+	sprintf(sIntStr, "%02d", timeinfo->tm_mon + 1);
+	strcat(sCurrTime, sIntStr);
+
+	memset(sIntStr, 0, sizeof(sIntStr));
+	sprintf(sIntStr, "%02d", timeinfo->tm_mday);
+	strcat(sCurrTime, sIntStr);
+
+	memset(sIntStr, 0, sizeof(sIntStr));
+	sprintf(sIntStr, "%02d", timeinfo->tm_hour);
+	strcat(sCurrTime, sIntStr);
+
+	memset(sIntStr, 0, sizeof(sIntStr));
+	sprintf(sIntStr, "%02d", timeinfo->tm_min);
+	strcat(sCurrTime, sIntStr);
+
+	memset(sIntStr, 0, sizeof(sIntStr));
+	sprintf(sIntStr, "%02d", timeinfo->tm_sec);
+	strcat(sCurrTime, sIntStr);
+
+	sCurrTime[14] = '\0';
+}
+
+int main(int argc, char* argv[])
+{
+	int iRet = 0;
+	if ((iRet = AnalyseMainOption(argc, argv)) != 0)
+	{
+		return iRet;
+	}
+	GetCurrTime();
+	
+	otl_connect _db;
+	db = &_db;
+	try
+	{
+		otl_connect::otl_initialize();
+		db->rlogon(psDbLoginString);
+	}
+	catch(otl_exception& otlErr)
+	{
+		fprintf(stderr, "错误代码：%d\n错误信息：%s", otlErr.code, otlErr.msg);
+		return 2;return otlErr.code;
+	}
+	
+	std::list<std::string> lstFuncDef;	//函数定义列表。
+	std::list<StringPair> lstFuncCall; //函数调用列表。
+	std::list<std::string> lstEscFunc;	//过滤的函数列表。
+	try
+	{
+		if (!bIsNotCheckConflictFileName)
+		{
+			CheckConflictFileName();
+		}
+		ReadEscFunc(psEscFuncFileName, lstEscFunc);
+		DealFile(lstFuncDef, lstFuncCall, lstEscFunc);
+	}
+	catch(BaseExcept &e)
+	{
+		fprintf(stderr, "错误代码：%d\n错误信息：%s", e.m_iErrNo, e.m_psErrMsg);
+		db->logoff();
+		return 2;
+	}
+
+	if (psSrcCppFileContent)
+	{
+		free(psSrcCppFileContent);
+	}
+
+	db->logoff();
+
+	printf("Success!\n");
+	return 0;
+}

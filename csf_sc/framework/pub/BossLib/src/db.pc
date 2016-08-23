@@ -1,0 +1,47 @@
+#include <stdio.h>
+#include <string.h>
+#include "oci.h"
+#include "ltypedef.h"
+#include "db.h"
+
+#ifdef SQLCA_STORAGE_CLASS
+#undef SQLCA_STORAGE_CLASS
+#endif
+
+/**
+ * 在此处生成SQLCA的实体。
+ */
+EXEC SQL INCLUDE SQLCA;
+
+#define SQLCA_STORAGE_CLASS extern
+
+int ProcDBLogin(const char* m_sDataSource, const char* m_sUserId, const char* m_sPasswd)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	char this_user[30];
+	/*char this_pwd[MAXENDELEN+1];*/
+	char this_pwd[32+1];
+	char this_srv[30];
+	EXEC SQL END DECLARE SECTION;
+	
+	memset(this_user, 0, sizeof(this_user));
+	memset(this_pwd, 0, sizeof(this_pwd));
+	memset(this_srv, 0, sizeof(this_srv));
+	
+	strcpy(this_user, m_sUserId);
+	strcpy(this_pwd, m_sPasswd);
+	strcpy(this_srv, m_sDataSource);
+
+	EXEC SQL CONNECT :this_user IDENTIFIED BY :this_pwd using :this_srv;
+	if (SQLCODE != 0)
+	{
+		return 0x00001015;
+	}
+	return 0;
+}
+
+
+void ProcDBClose()
+{
+	EXEC SQL COMMIT WORK RELEASE;
+}

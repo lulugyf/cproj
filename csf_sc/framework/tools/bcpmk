@@ -1,0 +1,56 @@
+#!/bin/sh
+
+lableName=$1
+
+#get the name of solib file
+libName=lib$(basename `pwd`).so
+
+#if some object files don't need compile,delete
+delFileName=
+if [  -f "./delfile"  ] ; then
+	delFileName=`cat delfile`
+fi
+
+#get all object files that need compile
+desfile=
+for f in *.cpp
+    do
+        filename=`echo $f|awk '{print substr($0,1,index($0,".cpp")-1)}'`.o
+        if [ "`echo ${delFileName}|grep -c ${filename}`" -eq 0 ] ; then
+        	desfile="${desfile} ${filename}"
+        fi
+done
+
+#if make clean, go to clean
+if [ "$lableName" = "clean" ] ; then
+	#remove
+	make -f ${HOME}/run/framework/tools/bcp.mk clean LIB_NAME=${libName}
+	exit;
+fi
+
+#if no *.cpp file or desfile is "", don't need to compile
+if [ "$desfile" = "*.o" -o "$desfile" = "" ] ; then
+	echo "no object file need to compile!"
+	exit;
+fi
+
+if [ "$lableName" = ""  ] ; then
+	libso=
+else
+	#get all Dynamic library that need link to
+	if [ -f "./libfile" ] ; then
+		libso=`cat libfile`;
+	fi
+
+	if [ "$libso" = "" ] ; then 
+		if [ ! -f "${HOME}/run/framework/tools/libfile" ] ; then
+			echo "file ${HOME}/run/framework/tools/libfile or ./libfile no found! maybe you can use bcpmk command !"
+			exit;
+		else
+			libso=`cat ${HOME}/run/framework/tools/libfile`;
+		fi
+	fi
+fi
+
+#compile the content of the part "all" of bcp.mk
+make -f ${HOME}/run/framework/tools/bcp.mk all LIB_NAME="${libName}" ALL_OBJS="${desfile}" LIB_FILE="${libso}"

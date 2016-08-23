@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="GBK" standalone="no" ?>
+<ROOT>
+	<COMMON_INFO>
+		<PROVINCE_GROUP type="string">10011</PROVINCE_GROUP>
+		<SESSION_ID type="string">23CGRBDMttwgBpsh6mSyTJqtggVc2pYLmGSVCLXF8ypG8L59jdGQ!-1625009959!1363248044628</SESSION_ID>
+		<SER_NAME type="string"></SER_NAME >
+		<ROUND_AUDIT type="string">Y</ROUND_AUDIT >
+		<DEST_IP type="string">172.21.0.123</DEST_IP>
+		<DEST_PORT type="string">11001</DEST_PORT>
+		<SRC_PORT type="string">4567</SRC_PORT>
+		<APP_NAME type="string">NGBOSS</APP_NAME>
+		<APP_ID type="string">2000</APP_ID>
+		<FROM_SYS type="string">BOSS</FROM_SYS>
+	</COMMON_INFO>
+	<REQUEST_INFO>
+		<PHONE_NO type="string">13546799494</PHONE_NO>
+		<ID_NO type="string">16310001001540</ID_NO>
+		<BRAND_ID type="string">ys</BRAND_ID>
+		<LOGIN_NO type="string">faaa48</LOGIN_NO>
+		<REGION_CODE type="string">16</REGION_CODE>
+		<CHANNEL_TYPE type="string">0</CHANNEL_TYPE>
+		<GROUP_ID type="string">13765</GROUP_ID>
+		<OP_CODE type="string">1147</OP_CODE>
+		<BUSI_INFO type="string"></BUSI_INFO>
+		<DISTRICT_CODE type="string">10145</DISTRICT_CODE>
+		<FLAG type="string">4</FLAG>
+		<CUST_FLAG type="string">0</CUST_FLAG>
+		<RED_FLAG type="string">N</RED_FLAG>
+		<BLACK_FLAG type="string">N</BLACK_FLAG>
+		<ACT_CLASS type="string"></ACT_CLASS>
+		<MARKOBJ_TYPE type="string">00</MARKOBJ_TYPE>
+		<TMP_TEST type="string">#######中文测试#######</TMP_TEST>
+	</REQUEST_INFO>
+</ROOT>
+

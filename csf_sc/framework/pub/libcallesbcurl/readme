@@ -1,0 +1,36 @@
+基于curl的 rest 和 esb 标准的实现;
+
+
+需要注意的是,c调webservice服务,用到了系统的iconv库.
+所以需要检查 iconv库是否安装,或者是否安装成功;
+目前出现的问题是:
+高版本的linux编译需要添加 -liconv 选项.
+低版本的linux系统默认添加 -liconv 选项.
+
+IBM 主机的 默认iconv有问题,需要重新安装liconv库.
+检验 系统iconv安装的是否正确
+可以在readme文件所在的当前目录执行:
+iconv -f gbk -t utf-8 ./readme
+如果没有报错则安装正常.
+
+
+
+
+编译办法通过执行b.sh 或者 c.sh 实现;
+请阅读 b.sh
+
+
+#####请阅读 c.sh
+
+
+测试demo
+esb:/tp/esb/csf/run/framework/pub/libcallesbcurl>./test
+usage: ./test 0|1 url msg_filename
+>>>>>: ./test 0|1 其中: 0为ws服务; 1为rest服务
+>>>>>: ./test url 其中: url为ws服务或者rest服务的地址
+>>>>>: ./test url 其中: msg_filename为一个文件名称,存放服务入参的报文
+
+
+
+
+

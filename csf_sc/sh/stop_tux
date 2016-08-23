@@ -1,0 +1,13 @@
+echo "All TUXEDO servers was stoped..."
+echo
+
+WHOAMI=`whoami`
+
+killer $WHOAMI ULOG
+killer $WHOAMI JSH
+killer $WHOAMI WSH
+
+s_public_DelShm
+#imdb_run stop server IMDB
+clean_qms $WHOAMI
+echo "All QMS of user scboss was cleaned..."

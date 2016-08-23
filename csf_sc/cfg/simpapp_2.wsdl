@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap11="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tuxtype="urn:pack.simpapp_typedef.salt11" xmlns:tns="urn:simpapp.wsdl" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" name="simpapp" targetNamespace="urn:simpapp.wsdl">
+	<wsdl:documentation>Generated at 11-17-2012 19:39:57:831</wsdl:documentation>
+	<wsdl:types>
+		<xsd:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="urn:pack.simpapp_typedef.salt11">
+			<xsd:element name="server_testWS">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="inbuf" type="xsd:string"></xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="server_testWSResponse">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="outbuf" type="xsd:string"></xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="s10WS">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="inbuf" type="xsd:string"></xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="s10WSResponse">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="outbuf" type="xsd:string"></xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="RouteWS">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="inbuf" type="xsd:string"></xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="RouteWSResponse">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="outbuf" type="xsd:string"></xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="sQSysDTWS">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="inbuf" type="xsd:string"></xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="sQSysDTWSResponse">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="outbuf" type="xsd:string"></xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:schema>
+	</wsdl:types>
+	<wsdl:message name="server_testWSInput">
+		<wsdl:part element="tuxtype:server_testWS" name="STRING"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="server_testWSOutput">
+		<wsdl:part element="tuxtype:server_testWSResponse" name="STRING"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="s10WSInput">
+		<wsdl:part element="tuxtype:s10WS" name="STRING"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="s10WSOutput">
+		<wsdl:part element="tuxtype:s10WSResponse" name="STRING"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="RouteWSInput">
+		<wsdl:part element="tuxtype:RouteWS" name="STRING"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="RouteWSOutput">
+		<wsdl:part element="tuxtype:RouteWSResponse" name="STRING"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="sQSysDTWSInput">
+		<wsdl:part element="tuxtype:sQSysDTWS" name="STRING"></wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="sQSysDTWSOutput">
+		<wsdl:part element="tuxtype:sQSysDTWSResponse" name="STRING"></wsdl:part>
+	</wsdl:message>
+	<wsdl:portType name="simpapp_PortType">
+		<wsdl:operation name="server_testWS">
+			<wsdl:input message="tns:server_testWSInput"></wsdl:input>
+			<wsdl:output message="tns:server_testWSOutput"></wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="s10WS">
+			<wsdl:input message="tns:s10WSInput"></wsdl:input>
+			<wsdl:output message="tns:s10WSOutput"></wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="RouteWS">
+			<wsdl:input message="tns:RouteWSInput"></wsdl:input>
+			<wsdl:output message="tns:RouteWSOutput"></wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="sQSysDTWS">
+			<wsdl:input message="tns:sQSysDTWSInput"></wsdl:input>
+			<wsdl:output message="tns:sQSysDTWSOutput"></wsdl:output>
+		</wsdl:operation>
+	</wsdl:portType>
+	<wsdl:binding name="simpapp_Binding" type="tns:simpapp_PortType">
+		<soap11:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"></soap11:binding>
+		<wsdl:operation name="server_testWS">
+			<soap11:operation soapAction="server_testWS" style="document"></soap11:operation>
+			<wsdl:input>
+				<soap11:body use="literal"></soap11:body>
+			</wsdl:input>
+			<wsdl:output>
+				<soap11:body use="literal"></soap11:body>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="s10WS">
+			<soap11:operation soapAction="s10WS" style="document"></soap11:operation>
+			<wsdl:input>
+				<soap11:body use="literal"></soap11:body>
+			</wsdl:input>
+			<wsdl:output>
+				<soap11:body use="literal"></soap11:body>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="RouteWS">
+			<soap11:operation soapAction="RouteWS" style="document"></soap11:operation>
+			<wsdl:input>
+				<soap11:body use="literal"></soap11:body>
+			</wsdl:input>
+			<wsdl:output>
+				<soap11:body use="literal"></soap11:body>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="sQSysDTWS">
+			<soap11:operation soapAction="sQSysDTWS" style="document"></soap11:operation>
+			<wsdl:input>
+				<soap11:body use="literal"></soap11:body>
+			</wsdl:input>
+			<wsdl:output>
+				<soap11:body use="literal"></soap11:body>
+			</wsdl:output>
+		</wsdl:operation>
+	</wsdl:binding>
+	<wsdl:service name="TuxedoWebService">
+		<wsdl:port binding="tns:simpapp_Binding" name="simpapp_GWWS1_HTTPPort">
+			<soap11:address location="http://172.21.1.72:23333/simpapp"></soap11:address>
+		</wsdl:port>
+	</wsdl:service>
+</wsdl:definitions>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+	(c) 2007 BEA Systems, Inc. All Rights Reserved.
+	Copyright (c) 2007 BEA Systems, Inc.
+	All Rights Reserved.
+
+	THIS IS UNPUBLISHED PROPRIETARY SOURCE CODE OF
+	BEA Systems, Inc.
+	The copyright notice above does not evidence any
+	actual or intended publication of such source code.
+
+	ident	"@(#) TuxWS/samples/simpapp/tux/simpapp.wsdf.template	$Revision: 1.1 $"
+-->
+<Definition xmlns="http://www.bea.com/Tuxedo/WSDF/2007" name="simpapp">
+	<WSBinding id="simpapp_Binding">
+		<Servicegroup id="simpapp_PortType">
+			<Service name="server_testWS"></Service>
+			<Service name="s10WS"></Service>
+			<Service name="RouteWS"></Service>
+			<Service name="sQSysDTWS"></Service>
+		</Servicegroup>
+		<SOAP style="document" use="literal">
+			<AccessingPoints>
+				<Endpoint address="http://172.21.1.72:23333/simpapp" id="simpapp_GWWS1_HTTPPort"></Endpoint>
+				<!-- Example: address="http://tuxedo:8080/simpapp" -->
+			</AccessingPoints>
+		</SOAP>
+	</WSBinding>
+</Definition>
+
+<!-- liupengc
+<Deployment xmlns="http://www.bea.com/Tuxedo/SALTDEPLOY/2007">
+	<WSDF>
+		<Import location="/crmpdpp/hcai/work/salt/simpapp_salt/work/simpapp.wsdf"></Import>
+		
+	</WSDF>
+	<WSGateway>
+		<GWInstance id="GWWS1">
+			<Inbound>
+				<Binding ref="simpapp:simpapp_Binding">
+					<Endpoint use="simpapp_GWWS1_HTTPPort"></Endpoint>
+				</Binding>
+			</Inbound>
+			<Properties>
+				<Property name="enableSOAPValidation" value="true"/>
+			</Properties>
+		</GWInstance>
+	</WSGateway>
+	<System></System>
+</Deployment>
+-->
+

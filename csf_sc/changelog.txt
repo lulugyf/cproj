@@ -1,0 +1,453 @@
+2014-05-28
+***********************************
+山西端到端需求，在原有给网管的日志基础上进行扩充，增加 统一流水 返回代码 返回错误信息 3个字段， 并单独记录到另外的日志文件中
+修改的函数是 liblogfunc 中的 NMLogCallBack， 在入参列表中增加了retCode retMsg
+修改的文件如下， 都是针对NMLogCallBack 这个函数入参改变而修改的:
+	framework/pub/
+		tuxadp/tuxadp.cpp
+		liblogfunc/LogFunc.h
+		liblogfunc/tuxadpcall.cpp
+	framework/include/LogFunc.h
+配置, 在crm.cfg 中新增了两个参数, 其中 svc_${servicename} 是服务开关，默认是关闭的
+[ERRLOG]
+DATA_PATH=<path to store log file>
+svc_${servicename}=1
+
+
+2014-05-19
+***********************************
+为CSF框架中添加到BP/BC级别的数据输出， 输出方式为 UDP， 输出格式如下<tab>分隔:
+	<统一ID> <调用ID> <父调用ID> <服务编号> <服务名> <调用开始时间> <调用结束时间> <主机IP> <端口号> <手机号> <工号> <模块代码> <结果编码> <结果信息>
+
+1. 配置文件 crm.cfg中增加如下的内容:
+[CALL_LOG]
+uni_accept_path=COMMON_INFO.TRACE_ID    #统一流水的保存路径
+log_path=udp://172.21.3.187:7788
+svc_sQDual=1
+svc_sQDual2=1
+
+2. 在 run/framework/pub/tuxadp 目录中新增3个文件： 
+	calltrace.cpp calltrace.h util_socket.cpp
+	并把这几个文件编译连接到 libtuxadp.so 中
+	
+3. 修改 tuxadp.cpp
+  a  #include "calltrace.h"
+  b  dotuxadp 和 dotuxadp1 两个函数中， 
+  	>TCtrlInfoEx CtrlInfo;
+  	-----------------------
+  	<TCtrlInfoEx2 CtrlInfo;
+	<EntryRecord *_er = NULL;
+	
+	初始化玩入参后， 加入下面二句:
+	CtrlInfo.init(transb->name, psUtypeFunc, inParam);
+	_er = new EntryRecord(transb->name, &CtrlInfo);
+	
+	在函数的末尾加入：
+	if(_er != NULL){
+		_er->setCode(retCode);
+		_er->setMsg(retMsg);
+		delete _er;
+	}
+4. 在头文件 framework.h 中加入这 2行:
+	utype* __CALLBP(TUtypeFuncPtr bpfunc, const char *bpname, const utype *uInParam, TCtrlInfo *ctrlInfo);
+	#define CALLBP(bpname, uInParam, ctrlInfo) __CALLBP(bpname, #bpname, uInParam, ctrlInfo)
+
+	
+
+
+2014-01-21
+***********************************
+框架测试数据连接以及检查业务规则 和 权限过滤的语句， 在压力测试中占据top 3的位置， 为了减少这几个语句的执行次数， 分别采取3个措施：
+1. 在dotuxadp 函数中把doRule() 和 dbFactory.doCall() 调用包在try 中， 
+	检测到otl_exception 特定的代码后，dbFactory.doBegin() （测试并建立连接）
+	这样在正常情况下除第一次连接外几乎不会再执行 select 1 from dual
+2. doRule 中加一个static变量记录时间， 如果检测到表中无数据， 则2分钟内不再检测
+3. 删除 dotuxadp 中 PowerFilter 函数的调用， 山西都已经去掉了， 
+	业务那边也基本没有再用这个玩意
+
+2013-11-1
+***********************************
+输出errInfo->infomsg 到 USER_MSG 的处理， 
+当业务代码在infomsg中填入内容的情况下，不管是否抛出异常， 都将内容输出到 USER_MSG 中， 而不是用RETURN_MSG的内容覆盖
+修改代码: pub/tuxadp/tuxadp.cpp 函数 errcodeExplain 中， 最后一个return语句的前面
+   if (urmsg[0] == 0)
+		strcpy(urmsg, errmsg);
+改为：
+	if(urmsg[0] == 0 && errInfo->infoMsg[0] != 0){
+		strncpy(urmsg, errInfo->infoMsg, len);
+		urmsg[len - 1] = 0;
+	}else if (urmsg[0] == 0){
+		strcpy(urmsg, errmsg);
+	}
+		
+
+
+2013-10-30
+***********************************
+安徽错误码管理平台接口， 当客户端参数中有CHANNEL 以及有下面的配置项时， 
+  通过接口或接口表去错误码平台的错误信息，放到返回结果的 STANDARD_PROMPT_MSG 字段
+ 修改了tuxadp.cpp 中的 bindRetBuff 函数，并增加了参数（服务入参）
+ 新增代码文件 pub/tuxadp/errmng.cpp, 函数 errMng, 在上面的bindRetBuff 中调用
+ 
+部署方式：
+1. 解压 curl-??.tar.gz 到 pub/目录下
+cd curl*
+CC="???" ./configure --prefix=`pwd`/../libcurl
+make
+make install
+cd ../libcurl/lib
+mv * ~/run/solib/
+
+2. 在解压 libcallerrcurl 到 pub/ 目录下， 然后在里面执行 make a
+
+3. 安装上面的文字修改pub/tuxadp/tuxadp.cpp, 
+       把errmng.cpp 放到 pub/tuxadp， 修改makefile， 加入这个文件
+       执行 make a
+
+4. 修改 env.mk 在 -ltuxadp 后加入 -lCallESBWS
+
+5. 修改 crm.cfg 配置文件， 加入如下的配置项:
+[ERRMANAGE]
+Interface=ws
+ws.URL=http://172.21.0.36:9091/ws/ErrorDetailTransfer
+   切换方式：  删掉这个section， 就完全不使用错误码平台；  Interface=db，则使用本地同步的库表，
+     Interface=ws
+     ws.URL=...    则是直接调用接口方式 
+        
+
+2013-10-29
+***********************************
+libcallesb 加入默认路由配置
+[CALL_ESB_API]
+_defRouteType=
+_defRouteValue=
+避免代码报错， 修改代码 pub/libcallesb_g/pCallESBApi.cpp 函数 pCallESBApi中 throw( appException(555100001,  err_msg) );的地方改为读配置
+
+
+2013-10-29
+***********************************
+日志入库服务编写， 在pub/tuxadp 目录下， 修改了errlog.cpp errlog.h errlog_imp.cpp makefile
+把errlog_imp.cpp 改写为一个服务， 通过 tpsvrinit 函数启动线程来运行日志入库函数
+日志表为月表， 语句如下：
+create table bs_csf_errlog_201310
+(
+	service_name varchar(64),
+	op_time date,
+	begin_time char(17),
+	time_cost number(8),
+	errid number(8),
+	server_ip varchar(64),
+	client_ip varchar(64),
+	contact_id varchar(25),
+	phone_no varchar(100),
+	op_code varchar(8),
+	login_no varchar(8),
+	ret_code number(6),
+	ret_msg varchar(128),
+	detail_msg varchar(128),
+	input varchar(4000),
+	output varchar(4000)
+);
+配置如下：
+[ERRLOG]
+#日志保存路径
+STORE_PATH=/tmp/errlog
+#是否记录成功日志 1-是 0-否
+STORE_SUCC_FLAG=1
+#日志表存在的数据库
+DBLABEL=dbchangea1
+
+errlog_imp 编译为一个tuxedo服务， 配置到 UBBCONFIG 中， 进程数为1
+
+***********************************
+跨库函数 AssiMutiConnWork 的兼容性改造：
+1.  根据服务来设默认路由， 没有配置默认路由的服务，采用全局配置的默认路由， 配置如下：
+[AssiMutiConnWork]
+_defRouteType=10
+_defRouteValue=1380819
+cGetAccountCustInfoByContract=sCss001
+cQAccountByContractNo=sCss002,10,1380819             #其中10为route_type, 1380918为route_value,  此二个参数可选
+ 注：如果服务调用中传入了　HEADER, 则不会使用配置的路由
+
+2. 使用原有模式的直接函数调用
+把[AssiMutiConnWork] 配置下对应项目删除， 在函数中如果找不到对应的配置， 则调用 AssiMutiConnWork_old
+
+修改代码如下：
+framework.h 中， AssiMutiConnWork 的define部分改为如下：
+utype* AssiMutiConnWork_callesb(const char *bpname, const utype* in, TCtrlInfo* errInfo, TUtypeFuncPtr ptUtypeFuncPtr, TDoMerge ptDoMerge, const char *psDbLabel, int iConnType);
+#define AssiMutiConnWork(uin, errinfo, bpfunc, mergfunc, dblabel, conntype) \
+		AssiMutiConnWork_callesb(#bpfunc, uin, errinfo, bpfunc, mergfunc, dblabel, conntype)
+tuxadp.cpp 中修改 函数： AssiMutiConnWork_callesb
+
+***********************************
+2013-9-23
+ 修改tuxadp.cpp, 在业务成功的情况下， 使 
+ 	errInfo->retMsg 返回到出参的 RETURN_MSG
+ 	errInfo->infoMsg 返回到出参的 USER_MSG
+ 	如果该两个参数没有值（errInfo->retMsg[0] == 0)， 则按以前的模式， 返回 ok!
+
+
+***********************************
+2013-9-18
+  分拆tuxadp.cpp 为 adapter.cpp adapter.h 和 tux.cpp, 
+     新增 ngx.cpp(用于接nginx plugin)
+  以便于实现其它的适配器
+
+
+***********************************
+2013-9-12 (bugfix)
+  framework/pub/rule/rule.cpp 的 getAllParam函数中第一个sql语句没有对结果集排序，
+   导致同样的 数据可能产生不同的结果（不确定性）， 修改如下（加入order by）：
+  SELECT   nvl(unit_id, -1) utid\
+		    FROM bs_ruleinparam_rel a\
+		   WHERE a.rule_id = :RULE_ID<int> \
+		GROUP BY unit_id order by utid
+		
+   优化： utFind 函数如果传入 const utype *pu 参数=NULL情况下代码会core， 修改了
+     utFind 和 _utSearch 中对pu参数的判断， if(pu==NULL) return UPOS_END;
+
+***********************************
+2013-9-3
+对外围接口处理json报文的一个困惑： 在可能出现多记录的节点下，多条记录时为数组， 单条时则不为数组。
+   允许通过按服务的配置， 其输出报文中指定节点必须为数组
+修改代码： pub/utype/utype_json.cpp, 增加接口函数 utype2json(const utype *, const char *path);
+        pub/tuxadp/tuxadp.cpp 中修改函数： bindRetBuff， 增加了一个参数 psServiceName, 函数申明改为：
+          static int bindRetBuff(const char *psServiceName, int ruleErrFlag, TCtrlInfo* errInfo, utype *outParam,
+		   long retCode, char *retMsg, string& sPromptMsg, char **retBuff,
+		    int *retLen, char *outName = NULL, bool isXml = true);
+新增配置： crm.cfg 中， 增加section: ServiceJsonArr, 配置服务对应输出报文中，必须为array的路径， 如：
+[ServiceJsonArr]
+sQDual=ROOT/OUT_DATA/TODAY
+sQDual=ROOT/OUT_DATA ROOT/OUT_DATA/TODAY
+注意： 空格分隔的path最多10个， path的层次最多20
+     不能有多余的空白字符
+
+ 2013-9-6
+ 使path配置中支持节点名称后加*号， 如： 
+ 	ROOT/OUT_DATA/TOD*
+ 	ROOT/OUT_DA*/TODAY
+ 	ROOT/OUT_DAT*/TODA*
+ 修改代码 pub/utype/utype_json.cpp， 注意，*号只能放在节点名称的末尾，放其它位置不能正常处理
+
+
+***********************************
+2013-8-26
+修改函数 AssiMutiConnWork 为通过esb调用服务
+配置增加两个section: CALL_ESB_API  AssiMutiConnWork, 前者为配置esb的channel_id及地址， 后则配置bpname对应的服务名称
+头文件修改： framework.h
+  //utype* AssiMutiConnWork(const utype* in, TCtrlInfo* errInfo, TUtypeFuncPtr ptUtypeFuncPtr, TDoMerge ptDoMerge, const char *psDbLabel, int iConnType);
+  utype* AssiMutiConnWork_callesb(const utype* in, const char *bpname);
+  #define AssiMutiConnWork(uin, errinfo, bpfunc, mergfunc, dblabel, conntype)  AssiMutiConnWork_callesb(uin, #bpfunc)
+代码文件： pub/tuxadp/tuxadp.cpp
+	原 AssMutiConnWork 函数更名为 AssMutiConnWork_old
+	新增函数 AssMutiConnWork_callesb
+新增pub库： libcallesb,  需要修改run/framework/tools/env.mk 把-lCallEsbApi 加到-ltuxadp 所在的LIB变量中
+
+ 
+
+***********************************
+2013-8-16
+在服务执行成功的情况下， RETURN_MSG只能返回一个ok!, 
+  但电子渠道那边沿用以前的方式，在成功时也需要能够返回给客户展示的提示信息， 比如套餐的生效情况等
+方案： 通过在BP中向这个TCtrlInfo.retMsg传入需要的内容， 框架在成功时检测到里面有内容（每次调用bp/bc前先清空)就替换errmsg
+修改 tuxapd.cpp 中的 busiwork函数， 调用bp/bc前把 TCtrlInfo.retMsg 清空
+      函数 errcodeExplain 中修改前面的一段：
+    if (errcode == 0) {
+		if(errInfo->retMsg[0] != 0)
+			snprintf(errmsg, len, errInfo->retMsg);
+		else
+			snprintf(errmsg, len, "ok!");
+		strcpy(urmsg, errmsg);
+		return strlen(errmsg);
+	}
+
+************************************
+2013-8-2
+   --2013-8-16修改， 配置文件格式改为yaml格式了，对应的说明已经加在readme.txt 中了
+新加了一个server编译工具， 位置： run/src/svrcfg
+工具为 makeserver.py
+根据配置文件生成server代码并编译
+需求来源： 四川CRM5.7 服务合并以减少oracle连接数
+用法：
+预先按照该目录中的readme.txt 文件生成对应的 $server.yaml 文件
+cd $WORKDIR/run/src/svrcfg
+python makeserver.py server1 server2 ...
+
+************************************
+2013-6-7
+未完成的设计：
+1. 框架操作日志入库， 在统一日志专题中加入的
+2. tux框架中， 默认不连接内存数据库
+3. 错误日志入库， 并加入错误流水， 在返回信息中加入该流水， 便于前台人员获得并反馈到支撑中心查到对应错误信息
+
+2013-6-21
+   对于错误日志入库的修改， 实现功能如下：
+    1. 调用失败的服务， 生成一个errid，并插入到return_msg中
+                入参和出参，以及调用时间等记录单独日志文件， 待入库
+    2. 加个开关， 可以将成功的服务调用记录同上面一样记录
+  配置： $CRM_CFG [ERRLOG]
+  STORE_PATH=          文件存储路径, 绝对路径， 如 /iboss1/run/log/errlog
+  STORE_SUCC_FLAG=     1 为记录成功调用；  0为否, 一般情况设会 0
+  DBLABEL=             日志入库使用的数据库标签， 暂不进行入库处理， 该配置可以不提供
+  示例如下：
+[ERRLOG]
+STORE_PATH=/iboss1/run/log/errlog
+STORE_SUCC_FLAG=0  
+  
+  增加二个文件 pub/tuxadp/  errlog.cpp errlog.h, 并修改了 tuxadp.cpp
+  入库代码在 errlog_imp.cpp 中, 需要单独编写主程序或者封装到应用程序中调用
+  
+
+
+************************************
+2013-5-31
+说明： 把服务入参中的HEADER节点保存到全局变量中， 便于服务调用服务模块获取原始服务参数
+文件： framework/pub/tuxadp/tuxadp.cpp
+
+     增加全局静态变量 static const utype *inputHeader = NULL;
+            和 函数 const utype *CSF_getInputHeader();  该函数在兼容模式下可能返回 NULL（客户端未按新报文格式传入请求）
+     并删除了之前添加的 函数 CSF_get_pool_id
+         修改函数 useDBID
+ 
+************************************
+2013-5-7:
+说明： 结合前台验证方式对配置的敏感信息模糊化处理
+文件： framework/pub/filter.cpp  PowerFilter函数整体修改
+     framework/include/framework.h 中 删除 PowerFilter函数申明
+     framework/pub/tuxadp.cpp 中， 修改 PowerFilter函数的申明及调用
+
+ 通过环境变量:  VALIDATE_PATH 作为开关， 
+ 	该变量的值是是否经过用户验证的参数在服务入参中的路径， 
+ 	如  export VALIDATE_PATH=REQUEST_INFO.OPR_INFO.VALIDATE_TYPE
+ 	   值 1为以验证， 0为未验证， 没有设置或入参未传的情况都视为 1， 以便向后兼容
+ 修改了 PowerFilter 函数的申明：
+ <<void Powerfilter(utype* pu, TCtrlInfo* errinfo, const char* login_no, const char* svc_name);
+ ===
+ >>void Powerfilter(utype* pu_out, TCtrlInfo* errinfo, const utype* pu_in, const char* svc_name);
+ 并把该函数申明从 framework.h 中删除了
+
+
+************************************
+2013-5-2:
+在输出日志中加入支持统一流水, 四川CRM5.7新需求
+修改代码: framework/pub/tuxadp/tuxadp.cpp  framework/pub/publog/log4c.c
+新增配置: 环境变量 UNIACCEPT_PATH , 其值为入参中统一流水的utype path, 如
+	export UNIACCEPT_PATH=Busi_Info.ABC.UniAccept
+修改配置: l4c.cfg 或者 crm.cfg 中的 .DEFAULT 日志配置中, Format 项增加支持 %t 格式, 为从入参中读取的统一流水
+测试: clxml sQDual '{"ROOT":{"Busi_Info":{"ABC":{"UniAccept":"ggggggg"}}}}'
+
+
+************************************
+2013-4-28:
+新增单独验证业务规则BP, 将遍历所有规则组, 并将验证结果返回
+
+新增文件: framework/pub/rule/rulecheckall.cpp ,
+		... ruleck.cpp(测试用)
+BP名称: utype* pRuleCheck(const utype* puParamIn, TCtrlInfo* errInfo);
+该BP连接到文件 librule.so 中
+
+输入参数说明:
+	增加参数 svc_name
+	其余为业务原有参数
+
+输出格式说明：
+{"RETURN_CODE": n,    # 0 为无业务限制  ;  非0, 有业务限制,最后的一个限制的业务代码
+ "RETURN_MSG" : "",   # 描述信息
+ "CheckResult":[
+ 	 {
+ 	 	 "RULEID":n,
+ 	 	 "RULENAME":"",
+ 	 	 "GROUPID":n,
+ 	 	 "GROUPNAME":"",
+ 	 	 "RETURN_CODE":n,
+ 	 	 "RETURN_MSG": "",
+ 	 	 "FILE_NAME":"",
+ 	 	 "BP_NAME":"",
+ 	 	 "ADVICE_MSG":"",
+ 	 	 "CUST_CLASS_TIPS":""
+ 	 },
+ 	 {}
+ 	 ...
+ 	 ]
+}
+
+
+
+************************************
+2013-4-3:
+山西业务规则只是分表SQL的需求改造方案:
+ 业务规则sql书写方式:
+select 1 from pd_userprc_info_#{%m}${ID_NO[-2:]} where phone_no = :PHONE_NO<CHAR[20]>
+
+格式说明：
+  ${变量名[截取描述]}：   截取描述支持按字符串的字符位置截取参数的部分， 负数为反向下标，  如： ID_NO="123456", [1:2]="2"  [-2:]="56" [:-3]="123"
+  #{%m}： 为时间描述字串， 支持的格式按 ansi c标准函数 strftime 来处理， 取当前系统时间计算
+
+1. 服务入参不变
+2. sql字串替换功能是必须的， 所以让 doQuerySql 能做变量替换
+3. 剩下就是参数加工的问题了， 其实业务规则提供了参数二次处理的功能， rule.cpp:getAllParam 函数， 但这个函数目前功能不够灵活， 只支持从入参中的特定路径取一个参数以给定的名称重新加入到规则入参中， 以及调用一个BP来处理入参， 额外写BP确实是一个不太好的选择
+   这里的改造是让getAllParam支持通过入参执行sql语句并获取结果集产生新的参数， 分表后缀啥的就可以有了
+
+配置说明：
+ 产生参数的SQL语句配置在 bs_busiunit_dict 中， unit_name='SQL', unit_path=$SQL
+  配置方法请参考 framework/pub/rule/ruletest.txt 文件 
+
+
+************************************
+2013-4-3:
+svn:  http://172.16.9.156:9001/svn/HCAI/csf
+用户名和密码是 guanyf/guanyf
+
+
+
+************************************
+2013-4-2:
+安徽应急系统改造双库函数:
+双库函数的应急处理： 配置 crm.cfg 中， [BASEENV]EMERGENCY_FILE=???
+参数为可选， 参数指向应急标记文件的绝对路径， 判断方式为如果文件存在， 则为应急模式
+
+双库函数的应急处理模式： 如果传入多库标签（以，分隔的多个库标签），则只保留本大区的标签, 如果没有发现本区的标签, 则不处理
+
+在  AssiMutiConnWork 函数的第一行前加入下面的语句
+	char emergencyLabel[64];
+	psDbLabel = checkEmergency(psDbLabel, emergencyLabel); //add for 安徽应急
+
+************************************
+2013-2:
+DB_ID改造: 四川CRM5.7项目中中间件x86化, 需要能够灵活部署, 支持从入参中传入分区代码
+for Sichuan CRM5.7, tuxedo 实例不分区 2013-2
+只修改单库连接的情况, 删除从配置中得到的 MAIN.DBPARTITION,
+替换为从入参中得到的 HEADER.DB_ID
+如果有含DBID的包头， 则puIn指向BODY, 否则puIn与inParam相同
+入参格式(BODY中为原有业务参数):
+{"ROOT":{
+  "HEADER":{"DB_ID":"???", "POOL_ID":"???",...}
+  "BODY":{...}
+}
+也兼容以前的无 HEADER BODY的格式
+
+************************************
+2013-2：
+四川CRM5.7项目的开发环境， 中间件主机与数据库主机间有防火墙， 会干扰中间件服务的数据库长连接, 
+空闲一段时间(30分钟,防火墙策略设定)后, 应用在检测到连接断开重连时, 直接调用OTL的connect
+但实际上连接没有重新连接, 导致后续的服务使用无效的数据库连接而core掉
+修改 framework/pub/tuxadp/framework.cpp 的 db_connect::tryConnect() 方法: 
+	在检测到连接断开时, 调用  potl->logoff(); 
+
+************************************
+2013-2:
+四川CRM5.7项目， 为了便于数据库连接管理部分的代码更新减少代码影响面， 将 framework.h 头文件中的两个类
+class db_factory
+class db_connect
+ 的成员方法都迁移到了 framework/pub/tuxadp/framework.cpp 中了， 并编译连接到 libtuxadp.so 中
+
+
+************************************
+2013-1:
+增加CSF对json数据类型的支持, 同时兼容 utype-xml 格式:
+修改内容: 
+	1. framework/pub/utype 目录中加入 jsonc(来自开源软件json-c),
+	    增加 framework/pub/utype/utype-json.cpp 用于支撑 utype - json 的互转
+	2. framework/pub/tuxadp/tuxadp.cpp 中, 使用函数  checkChr 检查输入串是否 < 开头,
+	  如果是, 则按原有的xml->utype转换, 否则按json->utype进行转换
+	  并保存标志, 使返回内容格式与输入格式相同

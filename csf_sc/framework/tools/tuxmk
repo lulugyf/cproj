@@ -1,0 +1,57 @@
+#!/bin/sh
+#set -x
+print_usage()
+{
+  echo "========================================================"
+  echo "tuxmake--服务自动编译脚本";
+  echo
+  echo "Usage: tuxmake 服务名";
+  echo
+  echo "例:tuxmake RCustMsg";
+  echo ".dep 文件格式说明："
+  echo "     第1行是需要的连接到服务程序的目标文件，如： mysvr.o"
+  echo "     第2行是需要连接的库文件, 可选, 如： -L/some/dir -lname1"
+  echo "     第3行是额外指定头文件路径, 可选, 如： -I/some/include"
+  echo "========================================================"
+}
+
+SRV_NAME=$1
+
+if [ -z "$1" ] ; then
+  print_usage;
+  exit;
+fi
+
+if [ ! -r "${SRV_NAME}.dep" ] ; then
+  echo "file [${SRV_NAME}.dep] no found!"
+  exit;
+fi
+
+fcount=`cat ${SRV_NAME}.dep|wc -l`
+DEP=`head -1 ${SRV_NAME}.dep`
+
+if [ $fcount -gt 1 ]; then
+DEPLIB=`head -2 ${SRV_NAME}.dep|tail -1`
+else
+DEPLIB=""
+fi
+
+if [ $fcount -gt 2 ]; then
+DEPINC=`head -3 ${SRV_NAME}.dep|tail -1`
+else
+DEPINC=""
+fi
+
+SVS=`grep void ${SRV_NAME}.cpp | tr -s "(" " " | awk '($4 ~/^[s]/) {printf("-s %s ", $4)}'`
+echo ${SVS}
+
+PLAT=`uname -s`
+if [ "$PLAT" = "AIX" ]; then
+CC="xlc++_r -q64 -brtl"; export CC
+fi
+if [ "$PLAT" = "SunOS" ]; then
+CC="CC -features=extensions -xarch=v9 -KPIC -g"; export CC
+fi
+
+LANG=C; export LANG
+make -f ${WORKDIR}/framework/tools/svc1.mk MYCOMPILE SRV_NAME=${SRV_NAME} DEP="${DEP}" DEPLIB="${DEPLIB}" DEPINC="${DEPINC}" SVS="${SVS}"

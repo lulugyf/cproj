@@ -1,0 +1,55 @@
+############
+# SERVICE: * server_testWS
+############
+service=server_testWS
+export=y
+servicetype=service
+inbuf=STRING
+outbuf=STRING
+tuxservice=stest
+param=name
+type=string
+access=inout
+
+
+############
+# SERVICE: * s10WS
+############
+service=s10WS
+export=y
+servicetype=service
+inbuf=STRING
+outbuf=STRING
+tuxservice=sRoute
+param=name
+type=string
+access=inout
+
+############
+# SERVICE: * RouteWS
+############
+service=RouteWS
+export=y
+servicetype=service
+inbuf=STRING
+outbuf=STRING
+tuxservice=sRouteInfo
+param=name
+type=string
+access=inout
+
+############
+# SERVICE: * sQSysDTWS
+############
+service=sQSysDTWS
+export=y
+servicetype=service
+inbuf=STRING
+outbuf=STRING
+tuxservice=sQSysDT
+param=name
+type=string
+access=inout
+
+
+

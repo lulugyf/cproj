@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:ns1="http://org.apache.axis2/xsd" xmlns:ns="http://ws.sitech.com" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" targetNamespace="http://ws.sitech.com">
+    <wsdl:documentation>sDynSvc查询短号: second</wsdl:documentation>
+    <wsdl:types>
+        <xs:schema attributeFormDefault="qualified" elementFormDefault="qualified" targetNamespace="http://ws.sitech.com">
+            <xs:element name="callService">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" name="pin" nillable="true" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="callServiceResponse">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" name="return" nillable="true" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:schema>
+    </wsdl:types>
+    <wsdl:message name="callServiceRequest">
+        <wsdl:part name="parameters" element="ns:callService"/>
+    </wsdl:message>
+    <wsdl:message name="callServiceResponse">
+        <wsdl:part name="parameters" element="ns:callServiceResponse"/>
+    </wsdl:message>
+    <wsdl:portType name="sDynSvcPortType">
+        <wsdl:operation name="callService">
+            <wsdl:input message="ns:callServiceRequest" wsaw:Action="urn:callService"/>
+            <wsdl:output message="ns:callServiceResponse" wsaw:Action="urn:callServiceResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="sDynSvcSoap11Binding" type="ns:sDynSvcPortType">
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+        <wsdl:operation name="callService">
+            <soap:operation soapAction="urn:callService" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+<!--    <wsdl:binding name="sDynSvcSoap12Binding" type="ns:sDynSvcPortType">
+        <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+        <wsdl:operation name="callService">
+            <soap12:operation soapAction="urn:callService" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>-->
+<!--    <wsdl:binding name="sDynSvcHttpBinding" type="ns:sDynSvcPortType">
+        <http:binding verb="POST"/>
+        <wsdl:operation name="callService">
+            <http:operation location="sDynSvc/callService"/>
+            <wsdl:input>
+                <mime:content type="text/xml" part="callService"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="text/xml" part="callService"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>-->
+    <wsdl:service name="sDynSvc">
+        <!--<wsdl:port name="sDynSvcTcpSoap11Endpoint" binding="ns:sDynSvcSoap11Binding">
+            <soap:address location="tcp://172.21.0.134:52001/esbWS/services/sDynSvc"/>
+        </wsdl:port>-->
+        <wsdl:port name="sDynSvcHttpSoap11Endpoint" binding="ns:sDynSvcSoap11Binding">
+            <soap:address location="http://172.21.0.134:51300/esbWS/services/sDynSvc/"/>
+        </wsdl:port>
+        <!--<wsdl:port name="sDynSvcTcpSoap12Endpoint" binding="ns:sDynSvcSoap12Binding">
+            <soap12:address location="tcp://172.21.0.134:52001/esbWS/services/sDynSvc"/>
+        </wsdl:port>-->
+        <!--<wsdl:port name="sDynSvcHttpSoap12Endpoint" binding="ns:sDynSvcSoap12Binding">
+            <soap12:address location="http://172.21.0.134:51300/esbWS/services/sDynSvc/"/>
+        </wsdl:port>-->
+        <!--<wsdl:port name="sDynSvcHttpEndpoint" binding="ns:sDynSvcHttpBinding">
+            <http:address location="http://172.21.0.134:51300/esbWS/services/sDynSvc/"/>
+        </wsdl:port>-->
+    </wsdl:service>
+</wsdl:definitions>

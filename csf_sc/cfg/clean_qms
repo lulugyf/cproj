@@ -1,0 +1,37 @@
+#
+# This script is used to clear the Q/S/M.
+#
+
+if [ $# = 0 ]
+then
+    echo Parameter error!
+    echo Useage example: clean_qms UserName
+    exit
+fi
+
+echo
+echo "Cleaning $1's Message Queues, Shared Memory, Semaphores ........ "
+
+echo
+ipcs -q|grep $1|grep 0|cut -d x -f 1|cut -c 2-|awk '{print $1}'|while read line
+do
+    ipcrm -q $line
+    echo "$1's Message Queues $line was cleaned."
+done
+
+echo
+ipcs -s|grep $1|grep 0|cut -d x -f 1|cut -c 2-|awk '{print $1}'|while read line
+do
+    ipcrm -s $line
+    echo "$1's Semaphores $line was cleaned."
+done
+
+echo
+ipcs -m|grep $1|grep 0|cut -d x -f 1|cut -c 2-|awk '{print $1}'|while read line
+do
+    ipcrm -m $line
+    echo "$1's Shared Memory $line was cleaned."
+done
+
+echo
+echo "Successful clean $1's Message Queues, Shared Memory, Semaphores."

@@ -1,0 +1,4 @@
+<ROOT>
+	<PHONE_NO type="string">15799881753</PHONE_NO>
+	<SVCCONT><![CDATA[<root>liupengc</root>]]></SVCCONT>
+</ROOT>

@@ -1,0 +1,38 @@
+{
+	"groups":[
+		{
+			"factors":[
+				{
+					"param_note":"0",
+					"desc":"0",
+					"value2":"0",
+					"value1":"select 1 from test_usr_60 where phone_no=:PHONE_NO<char[16]>",
+					"operator":10,
+					"param":12001,
+					"id":30091
+				}
+			],
+			"tips":"",
+			"advice":"",
+			"return_msg":"号码已经存在本业务，不能重复办理",
+			"return_code":7700091,
+			"desc":"PHONE_NO不能在test_usr_60表中有记录",
+			"name":"规则组1",
+			"id":50091
+		}
+	],
+	"service":"sQDual",
+	"id":70091,
+	"name":"普通SQL规则测试",
+	"desc":"SQL业务规则测试",
+	"params":[
+			{
+				"id":"12001",
+				"name":"PHONE_NO",
+				"utype_path":"REQUEST_INFO.PHONE_NO",
+				"type":5,
+				"length":15,
+				"desc":"用户号码"
+			}
+	]
+}

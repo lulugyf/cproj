@@ -1,0 +1,12 @@
+CREATE OR REPLACE FUNCTION encrypt_data (p_text VARCHAR2)
+   RETURN VARCHAR2
+IS
+   v_text   VARCHAR2 (200);
+BEGIN
+
+   RETURN crypt_data(p_text,'1');
+
+   EXCEPTION
+     WHEN NO_DATA_FOUND THEN  NULL;
+END;
+/
