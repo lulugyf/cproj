@@ -39,6 +39,11 @@ struct cmd11
 };
 
 typedef int (* entry_callback)(struct cmd11 *cmds, const int rec_count, const int connid);
-extern void entry_loop(const char *hlrcode, const char *tname, entry_callback callback, const int connid);
+
+void entry_loop(const char *hlrcode, const char *tname, entry_callback callback, const int connid);
+
+int db_login(char *user,char *pswd,char *name);
+int db_logout();
+
 
 #endif

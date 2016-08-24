@@ -42,7 +42,7 @@ int tcp_close (int sd)
 }
 
 #ifdef __WIN32__
-int WSA_init = 0;
+static int WSA_init = 0;
 int tcp_socket ()
 {
     if (WSA_init == 0)
@@ -368,21 +368,21 @@ int tcp_writen (int fd, char *ptr, int nbytes)
 int tcp_check_read (int *socks, int count, int timeout)
 {
   fd_set rfd;
-  int i, ret, fds, j;
+  int i, ret, maxfd, j;
   struct timeval tvl;
 
-  fds = 0;
+  maxfd = 0;
   FD_ZERO (&rfd);
   for (i = 0; i < count; i++)
     {
       FD_SET (socks[i], &rfd);
-      fds = (socks[i] > fds) ? socks[i] : fds;
+      maxfd = (socks[i] > maxfd) ? socks[i] : maxfd;
     }
-  fds++;
+  maxfd++;
   tvl.tv_sec = timeout / 1000;
   tvl.tv_usec = (timeout % 1000) * 1000;
 
-  ret = select (fds, &rfd, NULL, NULL, &tvl);
+  ret = select (maxfd, &rfd, NULL, NULL, &tvl);
   if (ret <= 0)
     {
       return ret;

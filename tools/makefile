@@ -11,8 +11,12 @@ O=../o
 
 #all: clear_dir proxy empty_file smpp hwHlr vpmndel smapcmd smapnew
 #all: smap smpserv smapcmd smpserv_pkt smap_sc smap_sc_client
-all: proxy socks5
-      
+#all: proxy socks5
+all: proxy_sel
+
+proxy_sel: proxy_sel.o
+	$(CC) -o $@ $^ -lws2_32
+
 proxy: proxy.o util_tcp.o daemon.o
 	$(CC) -o $@ $^ -lpthread -lws2_32
 

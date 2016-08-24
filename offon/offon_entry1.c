@@ -30,24 +30,9 @@ struct
 } hlraddr[256];
 
 
-struct
-{
-    char rectype[20];
-    char hlrcode[6];
-    char db1[10];
-    time_t rec_time;
-    int rows;
-    int tm4sel;
-    int tm4fch;
-    int tm4req;
-    int tm4upd;
-    int tm4ins;
-    int tm4dul;
-} yy_time;
 
 extern int GenDaemon();
 extern int testdir();
-extern int db_login();
 extern char *rlspace(char *);
 
 void usage(char *s)
@@ -131,24 +116,6 @@ int recv_reply(int connid, char retn[8])
     return 0;
 }
 
-void yy_time_log(time_t t)
-{
-    if(t-yy_time.rec_time >= 300){
-        file_log("perf",
-                "rectime=%ld,rectype=etr,hlrcode=%s,db1=%s,rows=%d,tm4sel=%d,"
-                "tm4fch=%d,tm4req=%d,tm4upd=%d,tm4ins=%d,tm4dul=%d",
-                t, yy_time.hlrcode, yy_time.db1, yy_time.rows, yy_time.tm4sel/1000,
-                yy_time.tm4fch/1000, yy_time.tm4req/1000, yy_time.tm4upd/1000, yy_time.tm4ins/1000, yy_time.tm4dul/1000);
-        yy_time.rows = 0;
-        yy_time.tm4sel = 0;
-        yy_time.tm4fch = 0;
-        yy_time.tm4req = 0;
-        yy_time.tm4upd = 0;
-        yy_time.tm4ins = 0;
-        yy_time.tm4dul = 0;
-        yy_time.rec_time = t;
-    }
-}
 
 FILE * open_logfp(time_t t, FILE *fp1, char *hlrcode)
 {
@@ -208,12 +175,12 @@ int entry_callback_impl(struct cmd11 *c1, const int rec_count, const int connid)
     rec_idx = 0;
     while(rec_idx < rec_count)
     {
-        /*æ‰¹é‡å‘manageré€æŒ‡ä»¤, ä¸€æ¬¡æœ€å¤š SNDLINEè¡Œ*/
+        /*ÅúÁ¿ÏòmanagerËÍÖ¸Áî, Ò»´Î×î¶à SNDLINEÐÐ*/
         y = SNDLINE;
         if(rec_count - rec_idx < SNDLINE)
             y = rec_count - rec_idx;
 
-        if(y > 99) y = 99; //åªå¤Ÿ2ä¸ªå­—ç¬¦å¡«å†™è®°å½•æ•°
+        if(y > 99) y = 99; //Ö»¹»2¸ö×Ö·ûÌîÐ´¼ÇÂ¼Êý
         sprintf(tcpbuf.reserve, "VV%02d", y); tcpbuf.reserve[4] = ' ';
         req = (struct op_data_req *)tcpbuf.data;
         for(x=0; x<y; x++, req++)
@@ -378,11 +345,6 @@ printf("hlrcode===%s~\n",hlrcode);
         tv->tm_year+1900,tv->tm_mon+1,tv->tm_mday,hlrcode);
     logfp = open_logfp(t, NULL, hlrcode);
 
-    memset(&yy_time, 0, sizeof(yy_time));
-    strcpy(yy_time.hlrcode, hlrcode);
-    strcpy(yy_time.rectype, "etr");
-    strcpy(yy_time.db1, "offdb");
-    yy_time.rec_time = time(NULL);
 
     fprintf(logfp,"INIT %04d/%02d/%02d %02d:%02d:%02d\n",
         tv->tm_year+1900,tv->tm_mon+1,tv->tm_mday,
@@ -497,4 +459,5 @@ printf("tname====%s~%s~%s~%s\n",tname, dbuser, dbpswd, bossdb);
     fclose(logfp);
 
     return 0;
+
 }
