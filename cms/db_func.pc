@@ -1,0 +1,1430 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <time.h>
+#include <errno.h>
+#include <sqlca.h>
+#include <sqlda.h>
+#include "cms.h"
+#include "db_func.h"
+#include <sys/stat.h>
+
+EXEC SQL INCLUDE SQLCA;
+
+extern FILE *logfp;
+
+extern char *rlspace(char *);
+extern void get_valstr();
+extern int comp_int();
+extern void cal_time();
+
+struct timeval ttt1,ttt2;
+
+void error_handler()
+{
+  fprintf(logfp,"====EXEC SQL ERROR BEGIN====\n");
+  /* modified by liupengc
+  fprintf(logfp,"sqlca.sqlcode=%d,sqlca.sqlerrm.sqlerrmc=%.-180s==[time=%ld]\n",
+    sqlca.sqlcode,sqlca.sqlerrm.sqlerrmc,time(NULL));
+*/
+  fprintf(logfp,"sqlca.sqlcode=%d,sqlca.sqlerrm.sqlerrmc=[%s],[time=%ld]\n",
+    sqlca.sqlcode,sqlca.sqlerrm.sqlerrmc,time(NULL));
+  fprintf(logfp,"====EXEC SQL ERROR END====\n");
+  fflush(logfp);
+}
+
+void warning_handler()
+{
+  fprintf(logfp,"====EXEC SQL WARNING BEGIN====\n");
+  fprintf(logfp,"sqlca.sqlcode=%d,sqlca.sqlerrm.sqlerrmc=%s[time=%ld]\n",
+    sqlca.sqlcode,sqlca.sqlerrm.sqlerrmc,time(NULL));
+  fprintf(logfp,"====EXEC SQL WARNING END====\n");
+  fflush(logfp);
+}
+
+/*int db_login(char *indbsec)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+    char dbuser[30];
+    char dbpswd[30];
+    char dbname[30];
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL WHENEVER SQLERROR DO error_handler();
+  EXEC SQL WHENEVER SQLWARNING DO warning_handler();
+  EXEC SQL WHENEVER NOT FOUND CONTINUE;
+
+  memset(dbuser,0x0,sizeof(dbuser));
+  memset(dbpswd,0x0,sizeof(dbpswd));
+  memset(dbname,0x0,sizeof(dbname));
+
+  strncpy(dbuser,indbsec,strstr(indbsec,"/")-indbsec);
+  strncpy(dbpswd,indbsec+(strstr(indbsec,"/")-indbsec+1),strstr(indbsec,"@")-strstr(indbsec,"/")-1);
+  strcpy(dbname,indbsec+(strstr(indbsec,"@")-indbsec)+1);
+
+printf("%s,%s,%s\n",dbuser,dbpswd,dbname);
+
+  EXEC SQL CONNECT :dbuser IDENTIFIED BY :dbpswd USING :dbname;
+
+  return SQLCODE;
+}*/
+int db_login(char *dbnameyx,char* username,char* password)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+    char dbuser[30];
+    char dbpswd[30];
+    char dbname[30];
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL WHENEVER SQLERROR DO error_handler();
+  EXEC SQL WHENEVER SQLWARNING DO warning_handler();
+  EXEC SQL WHENEVER NOT FOUND CONTINUE;
+
+  memset(dbuser,0x0,sizeof(dbuser));
+  memset(dbpswd,0x0,sizeof(dbpswd));
+  memset(dbname,0x0,sizeof(dbname));
+
+  /*strncpy(dbuser,indbsec,strstr(indbsec,"/")-indbsec);
+  strncpy(dbpswd,indbsec+(strstr(indbsec,"/")-indbsec+1),strstr(indbsec,"@")-strstr(indbsec,"/")-1);
+  strcpy(dbname,indbsec+(strstr(indbsec,"@")-indbsec)+1);*/
+  sprintf(dbuser,"%s",username);
+  sprintf(dbpswd,"%s",password);
+  sprintf(dbname,"%s",dbnameyx);
+
+printf("%s,%s,%s\n",dbuser,dbpswd,dbname);
+
+  EXEC SQL CONNECT :dbuser IDENTIFIED BY :dbpswd USING :dbname;
+
+  return SQLCODE;
+}
+
+/*int db_login(char *dbsection)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+    char dbuser[30];
+    char dbpswd[30];
+    char dbname[30];
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL WHENEVER SQLERROR DO error_handler();
+  EXEC SQL WHENEVER SQLWARNING DO warning_handler();
+  EXEC SQL WHENEVER NOT FOUND CONTINUE;
+
+  memset(dbuser,0x0,sizeof(dbuser));
+  memset(dbpswd,0x0,sizeof(dbpswd));
+  memset(dbname,0x0,sizeof(dbname));
+	if((DcReadCfg(dbsection,"DBSERV",dbname))<=0)
+	{
+		printf("failed to open boss15config.\n");
+		
+		return  -2;
+	}
+	if((DcReadCfg(dbsection,"DBUSER",dbuser))<=0)
+	{
+		printf("failed to open boss15config.\n");
+		return  -3;
+	}
+	if((DcReadCfg(dbsection,"DBPASSWD",dbpswd))<=0)
+	{
+		printf("failed to open boss15config.\n");
+		return  -4;
+	}
+  decrypt2(dbuser);	
+  decrypt2(dbpswd);
+
+printf("%s/%s@%s\n",dbuser,dbpswd,dbname);
+
+  EXEC SQL CONNECT :dbuser IDENTIFIED BY :dbpswd USING :dbname;
+
+  return SQLCODE;
+}*/
+void db_logout()
+{
+  EXEC SQL COMMIT WORK RELEASE; 
+
+  if(SQLCODE != SQL_OK)
+    fprintf(logfp,"DISCONNECT FROM DB failed\n");
+
+  return;
+}
+
+
+
+int get_MainSvcConf(struct MainSvcConf *head)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+    char tmpsql[1024];
+    char main_svc_id[16];
+    char main_action_group[16];
+    char cell_code[16];
+    char hlr_group[16];
+    char workorder_id[32];
+    char workorder_type[8];
+    int workorder_seq;
+    char issend_code[2048];
+    char is_value_map[2048];
+    char is_mul_com[128];
+  EXEC SQL END DECLARE SECTION;
+
+  struct MainSvcConf  *ptr;
+  int ret;
+
+  head->next=NULL;
+
+  SQLCODE=SQL_OK;
+  memset(tmpsql,0x0,sizeof(tmpsql));
+  memset(main_svc_id,0x0,sizeof(main_svc_id));
+  memset(main_action_group,0x0,sizeof(main_action_group));
+  memset(cell_code,0x0,sizeof(cell_code));
+  memset(hlr_group,0x0,sizeof(hlr_group));
+  memset(workorder_id,0x0,sizeof(workorder_id));
+  memset(workorder_type,0x0,sizeof(workorder_type));
+  memset(is_value_map,0x0,sizeof(is_value_map));
+  memset(issend_code,0x0,sizeof(issend_code));
+  memset(is_mul_com,0x0,sizeof(is_mul_com));
+  
+  workorder_seq=0;
+
+  memset(tmpsql,0x0,sizeof(tmpsql));
+  sprintf(tmpsql,"SELECT main_svc_id,main_action_group,cell_code,hlr_group,command_id,workorder_type,workorder_seq,issend_code,is_value_map,is_mul_com FROM CMSMAINSVCCONF WHERE use_flag='y' ORDER BY workorder_seq");
+  EXEC SQL PREPARE MainSvc_sql FROM :tmpsql;
+  EXEC SQL DECLARE cur_MainSvc CURSOR FOR MainSvc_sql;
+  EXEC SQL OPEN cur_MainSvc;
+  EXEC SQL FETCH cur_MainSvc INTO :main_svc_id,:main_action_group,:cell_code,:hlr_group,:workorder_id,:workorder_type,:workorder_seq,:issend_code,:is_value_map,:is_mul_com;
+
+  while(SQLCODE == SQL_OK)
+  {
+    ptr=(struct MainSvcConf *)malloc(sizeof(struct MainSvcConf));
+    /*fprintf(logfp,"malloc() in get_MainSvcConf()\n");*/
+    memset(ptr,0x0,sizeof(struct MainSvcConf));
+
+    strncpy(ptr->main_svc_id,rlspace(main_svc_id),15);
+    strncpy(ptr->main_action_group,rlspace(main_action_group),8);
+    strncpy(ptr->cell_code,rlspace(cell_code),8);
+    strncpy(ptr->hlr_group,rlspace(hlr_group),8);
+    strncpy(ptr->workorder_id,rlspace(workorder_id),30);
+    strcpy(ptr->issend_code,rlspace(issend_code));
+    strcpy(ptr->is_value_map,rlspace(is_value_map));
+    strcpy(ptr->is_mul_com,rlspace(is_mul_com));
+    ptr->workorder_type=workorder_type[0];
+    ptr->workorder_seq=workorder_seq;
+    ptr->next=NULL;
+
+    head->next=ptr;
+    head=ptr;
+
+    memset(main_svc_id,0x0,sizeof(main_svc_id));
+    memset(main_action_group,0x0,sizeof(main_action_group));
+    memset(cell_code,0x0,sizeof(cell_code));
+    memset(hlr_group,0x0,sizeof(hlr_group));
+    memset(workorder_id,0x0,sizeof(workorder_id));
+    memset(workorder_type,0x0,sizeof(workorder_type));
+    memset(is_value_map,0x0,sizeof(is_value_map));
+  	memset(issend_code,0x0,sizeof(issend_code));
+  	memset(is_mul_com,0x0,sizeof(is_mul_com));
+  	
+    workorder_seq=0;
+
+    EXEC SQL FETCH cur_MainSvc INTO :main_svc_id,:main_action_group,:cell_code,:hlr_group,:workorder_id,:workorder_type,:workorder_seq,:issend_code,:is_value_map,:is_mul_com;
+  }
+
+  if(SQLCODE==NO_MORE_ROWS)
+    ret=0;
+  else
+    ret=-1;
+
+  EXEC SQL CLOSE cur_MainSvc;
+
+  return ret;
+}
+
+
+int get_OrderProperty(struct OrderProperty *head)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+    char tmpsql[1024];
+    char main_svc_id[16];
+    char main_action_group[16];
+    char svc_id[60];
+    char property_id[64];
+    char property_value[64];
+    char cell_code[16];
+    char hlr_group[16];
+    char workorder_id[32];
+    char workorder_type[8];
+    int workorder_seq;
+  EXEC SQL END DECLARE SECTION;
+
+  struct OrderProperty  *ptr;
+  int ret;
+
+  head->next=NULL;
+
+  SQLCODE=SQL_OK;
+  memset(tmpsql,0x0,sizeof(tmpsql));
+  memset(main_svc_id,0x0,sizeof(main_svc_id));
+  memset(main_action_group,0x0,sizeof(main_action_group));
+  memset(svc_id,0x0,sizeof(svc_id));
+  memset(property_id,0x0,sizeof(property_id));
+  memset(property_value,0x0,sizeof(property_value));
+  memset(cell_code,0x0,sizeof(cell_code));
+  memset(hlr_group,0x0,sizeof(hlr_group));
+  memset(workorder_id,0x0,sizeof(workorder_id));
+  memset(workorder_type,0x0,sizeof(workorder_type));
+  workorder_seq=0;
+
+
+  memset(tmpsql,0x0,sizeof(tmpsql));
+  sprintf(tmpsql,"SELECT main_svc_id,main_action_group,svc_id,property_name,property_value,cell_code,hlr_group,workorder_id,workorder_type,workorder_seq FROM CMSOrderProperty WHERE use_flag='y' ORDER BY workorder_seq");
+  EXEC SQL PREPARE pro_sql FROM :tmpsql;
+  EXEC SQL DECLARE cur_pro CURSOR FOR pro_sql;
+  EXEC SQL OPEN cur_pro;
+  EXEC SQL FETCH cur_pro INTO :main_svc_id,:main_action_group,:svc_id,:property_id,:property_value,:cell_code,:hlr_group,:workorder_id,:workorder_type,:workorder_seq;
+
+  while(SQLCODE == SQL_OK)
+  {
+    ptr=(struct OrderProperty *)malloc(sizeof(struct OrderProperty));
+    fprintf(logfp,"malloc() in get_OrderProperty()\n");
+    memset(ptr,0x0,sizeof(struct OrderProperty));
+
+    strncpy(ptr->main_svc_id,rlspace(main_svc_id),10);
+    strncpy(ptr->main_action_group,rlspace(main_action_group),8);
+    strncpy(ptr->svc_id,rlspace(svc_id),60);
+    strncpy(ptr->property_id,rlspace(property_id),60);
+    strncpy(ptr->property_value,rlspace(property_value),60);
+    strncpy(ptr->cell_code,rlspace(cell_code),8);
+    strncpy(ptr->hlr_group,rlspace(hlr_group),8);
+    strncpy(ptr->workorder_id,rlspace(workorder_id),30);
+    ptr->workorder_type=workorder_type[0];
+    ptr->workorder_seq=workorder_seq;
+    ptr->next=NULL;
+
+    head->next=ptr;
+    head=ptr;
+
+    memset(main_svc_id,0x0,sizeof(main_svc_id));
+    memset(main_action_group,0x0,sizeof(main_action_group));
+    memset(svc_id,0x0,sizeof(svc_id));
+    memset(property_id,0x0,sizeof(property_id));
+    memset(property_value,0x0,sizeof(property_value));
+    memset(cell_code,0x0,sizeof(cell_code));
+    memset(hlr_group,0x0,sizeof(hlr_group));
+    memset(workorder_id,0x0,sizeof(workorder_id));
+    memset(workorder_type,0x0,sizeof(workorder_type));
+    workorder_seq=0;
+
+    EXEC SQL FETCH cur_pro INTO :main_svc_id,:main_action_group,:svc_id,:property_id,:property_value,:cell_code,:hlr_group,:workorder_id,:workorder_type,:workorder_seq;
+  }
+
+  if(SQLCODE==NO_MORE_ROWS)
+    ret=0;
+  else
+    ret=-1;
+
+  EXEC SQL CLOSE cur_pro;
+
+  return ret;
+}
+
+int get_PropertyID(struct PropertyID *head)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+    char tmpsql[1024];
+    char property_id[16];
+    char property_name[128];
+  EXEC SQL END DECLARE SECTION;
+
+  struct PropertyID  *ptr;
+  int ret;
+
+  head->next=NULL;
+
+  SQLCODE=SQL_OK;
+  memset(tmpsql,0x0,sizeof(tmpsql));
+  memset(property_id,0x0,sizeof(property_id));
+  memset(property_name,0x0,sizeof(property_name));
+
+  memset(tmpsql,0x0,sizeof(tmpsql));
+  sprintf(tmpsql,"SELECT property_id,alias FROM spmssProperty WHERE status='Y'");
+  EXEC SQL PREPARE pid_sql FROM :tmpsql;
+  EXEC SQL DECLARE cur_pid CURSOR FOR pid_sql;
+  EXEC SQL OPEN cur_pid;
+  EXEC SQL FETCH cur_pid INTO :property_id,:property_name;
+
+  while(SQLCODE == SQL_OK)
+  {
+    ptr=(struct PropertyID *)malloc(sizeof(struct PropertyID));
+    fprintf(logfp,"malloc() in get_PropertyID()\n");
+    memset(ptr,0x0,sizeof(struct PropertyID));
+
+    strncpy(ptr->property_id,rlspace(property_id),10);
+    strncpy(ptr->property_name,rlspace(property_name),100);
+
+    head->next=ptr;
+    head=ptr;
+
+    memset(property_id,0x0,sizeof(property_id));
+    memset(property_name,0x0,sizeof(property_name));
+
+    EXEC SQL FETCH cur_pid INTO :property_id,:property_name;
+  }
+
+  if(SQLCODE==NO_MORE_ROWS)
+    ret=0;
+  else
+    ret=-1;
+
+  EXEC SQL CLOSE cur_pid;
+
+  return ret;
+}
+
+int get_ImsiInHlr(struct ImsiInHlr *head)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+    char tmpsql[1024];
+    char imsi_seg[16];
+    char hlr_code[16];
+  EXEC SQL END DECLARE SECTION;
+
+  struct ImsiInHlr  *ptr;
+  int ret;
+
+  head->next=NULL;
+
+  SQLCODE=SQL_OK;
+  memset(tmpsql,0x0,sizeof(tmpsql));
+  memset(imsi_seg,0x0,sizeof(imsi_seg));
+  memset(hlr_code,0x0,sizeof(hlr_code));
+
+  memset(tmpsql,0x0,sizeof(tmpsql));
+  sprintf(tmpsql,"SELECT imsi_head,hlr_code FROM rs_imsihlr_rel WHERE VALID_FLAG='1'");
+  EXEC SQL PREPARE imsi_sql FROM :tmpsql;
+  EXEC SQL DECLARE cur_imsi CURSOR FOR imsi_sql;
+  EXEC SQL OPEN cur_imsi;
+  EXEC SQL FETCH cur_imsi INTO :imsi_seg,:hlr_code;
+
+  while(SQLCODE == SQL_OK)
+  {
+    ptr=(struct ImsiInHlr *)malloc(sizeof(struct ImsiInHlr));
+    fprintf(logfp,"malloc() in get_ImsiInHlr()\n");
+    memset(ptr,0x0,sizeof(struct ImsiInHlr));
+/**modify 8->10**/
+    strncpy(ptr->imsi_seg,rlspace(imsi_seg),10);
+    strncpy(ptr->hlr_code,rlspace(hlr_code),10);
+
+    head->next=ptr;
+    head=ptr;
+
+    memset(imsi_seg,0x0,sizeof(imsi_seg));
+    memset(hlr_code,0x0,sizeof(hlr_code));
+
+    EXEC SQL FETCH cur_imsi INTO :imsi_seg,:hlr_code;
+  }
+
+  if(SQLCODE==NO_MORE_ROWS)
+    ret=0;
+  else
+    ret=-1;
+
+  EXEC SQL CLOSE cur_imsi;
+
+  return ret;
+}
+
+int get_MsisdnInHlr(struct MsisdnInHlr *head)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+    char tmpsql[1024];
+    char msisdn_seg[16];
+    char hlr_code[16];
+  EXEC SQL END DECLARE SECTION;
+
+  struct MsisdnInHlr  *ptr;
+  int ret;
+
+  head->next=NULL;
+
+  SQLCODE=SQL_OK;
+  memset(tmpsql,0x0,sizeof(tmpsql));
+  memset(msisdn_seg,0x0,sizeof(msisdn_seg));
+  memset(hlr_code,0x0,sizeof(hlr_code));
+
+  memset(tmpsql,0x0,sizeof(tmpsql));
+  sprintf(tmpsql,"SELECT msisdn_seg,hlr_code FROM MsisdnInHlr WHERE use_flag='Y'");
+  EXEC SQL PREPARE sn_sql FROM :tmpsql;
+  EXEC SQL DECLARE cur_sn CURSOR FOR sn_sql;
+  EXEC SQL OPEN cur_sn;
+  EXEC SQL FETCH cur_sn INTO :msisdn_seg,:hlr_code;
+
+  while(SQLCODE == SQL_OK)
+  {
+    ptr=(struct MsisdnInHlr *)malloc(sizeof(struct MsisdnInHlr));
+    /*fprintf(logfp,"malloc() in get_MsisdnInHlr()\n");*/
+    memset(ptr,0x0,sizeof(struct MsisdnInHlr));
+
+    strncpy(ptr->msisdn_seg,rlspace(msisdn_seg),8);
+    strncpy(ptr->hlr_code,rlspace(hlr_code),8);
+
+    head->next=ptr;
+    head=ptr;
+
+    memset(msisdn_seg,0x0,sizeof(msisdn_seg));
+    memset(hlr_code,0x0,sizeof(hlr_code));
+
+    EXEC SQL FETCH cur_sn INTO :msisdn_seg,:hlr_code;
+  }
+
+  if(SQLCODE==NO_MORE_ROWS)
+    ret=0;
+  else
+    ret=-1;
+
+  EXEC SQL CLOSE cur_sn;
+
+  return ret;
+}
+
+int get_MainActionGroup(struct MainActionGroup *head)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+    char tmpsql[1024];
+    char main_action_group[16];
+    char main_action_id[16];
+  EXEC SQL END DECLARE SECTION;
+
+  struct MainActionGroup  *ptr;
+  int ret;
+
+  head->next=NULL;
+
+  SQLCODE=SQL_OK;
+  memset(tmpsql,0x0,sizeof(tmpsql));
+  memset(main_action_group,0x0,sizeof(main_action_group));
+  memset(main_action_id,0x0,sizeof(main_action_id));
+
+  memset(tmpsql,0x0,sizeof(tmpsql));
+  sprintf(tmpsql,"SELECT main_action_group,main_action_id FROM spmsMainActionGroup WHERE use_flag='y' ORDER BY main_action_group,main_action_id");
+  EXEC SQL PREPARE mag_sql FROM :tmpsql;
+  EXEC SQL DECLARE cur_mag CURSOR FOR mag_sql;
+  EXEC SQL OPEN cur_mag;
+  EXEC SQL FETCH cur_mag INTO :main_action_group,:main_action_id;
+
+  while(SQLCODE == SQL_OK)
+  {
+    ptr=(struct MainActionGroup *)malloc(sizeof(struct MainActionGroup));
+    fprintf(logfp,"malloc() in get_MainActionGroup()\n");
+    memset(ptr,0x0,sizeof(struct MainActionGroup));
+
+    strncpy(ptr->main_action_group,rlspace(main_action_group),8);
+    strncpy(ptr->main_action_id,rlspace(main_action_id),8);
+
+    head->next=ptr;
+    head=ptr;
+
+    memset(main_action_group,0x0,sizeof(main_action_group));
+    memset(main_action_id,0x0,sizeof(main_action_id));
+
+    EXEC SQL FETCH cur_mag INTO :main_action_group,:main_action_id;
+  }
+
+  if(SQLCODE==NO_MORE_ROWS)
+    ret=0;
+  else
+    ret=-1;
+
+  EXEC SQL CLOSE cur_mag;
+
+  return ret;
+}
+
+int get_SubSvcGroup(struct SubSvcGroup *head)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+    char tmpsql[1024];
+    char sub_svc_group[16];
+    char sub_svc_id[16];
+  EXEC SQL END DECLARE SECTION;
+
+  struct SubSvcGroup  *ptr;
+  int ret;
+
+  head->next=NULL;
+
+  SQLCODE=SQL_OK;
+  memset(tmpsql,0x0,sizeof(tmpsql));
+  memset(sub_svc_group,0x0,sizeof(sub_svc_group));
+  memset(sub_svc_id,0x0,sizeof(sub_svc_id));
+
+  memset(tmpsql,0x0,sizeof(tmpsql));
+  sprintf(tmpsql,"SELECT sub_svc_group,sub_svc_id FROM spmsSubSvcGroup WHERE use_flag='y' ORDER BY sub_svc_group,sub_svc_id");
+  EXEC SQL PREPARE ssg_sql FROM :tmpsql;
+  EXEC SQL DECLARE cur_ssg CURSOR FOR ssg_sql;
+  EXEC SQL OPEN cur_ssg;
+  EXEC SQL FETCH cur_ssg INTO :sub_svc_group,:sub_svc_id;
+
+  while(SQLCODE == SQL_OK)
+  {
+    ptr=(struct SubSvcGroup *)malloc(sizeof(struct SubSvcGroup));
+    fprintf(logfp,"malloc() in get_SubSvcGroup()\n");
+    memset(ptr,0x0,sizeof(struct SubSvcGroup));
+
+    strncpy(ptr->sub_svc_group,rlspace(sub_svc_group),10);
+    strncpy(ptr->sub_svc_id,rlspace(sub_svc_id),10);
+
+    head->next=ptr;
+    head=ptr;
+
+    memset(sub_svc_group,0x0,sizeof(sub_svc_group));
+    memset(sub_svc_id,0x0,sizeof(sub_svc_id));
+
+    EXEC SQL FETCH cur_ssg INTO :sub_svc_group,:sub_svc_id;
+  }
+
+  if(SQLCODE==NO_MORE_ROWS)
+    ret=0;
+  else
+    ret=-1;
+
+  EXEC SQL CLOSE cur_ssg;
+
+  return ret;
+}
+
+int get_WorkOrderSave(struct WorkOrderSave *head)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+    char stmpsql[1024];
+    char cell_code[32];
+    char hlr_code[32];
+    char save_code[65];
+  EXEC SQL END DECLARE SECTION;
+
+  struct WorkOrderSave  *ptr;
+  int ret;
+
+  head->next=NULL;
+
+  SQLCODE=SQL_OK;
+  memset(stmpsql,0x0,sizeof(stmpsql));
+  memset(cell_code,0x0,sizeof(cell_code));
+  memset(hlr_code,0x0,sizeof(hlr_code));
+  memset(save_code,0x0,sizeof(save_code));
+
+  memset(stmpsql,0x0,sizeof(stmpsql));
+  sprintf(stmpsql,"SELECT cell_code,hlr_code,save_code FROM CmsWorkOrderSaveRule WHERE use_flag='y' ORDER BY cell_code,hlr_code,save_code");
+  EXEC SQL PREPARE save_sql FROM :stmpsql;
+  EXEC SQL DECLARE cur_save CURSOR FOR save_sql;
+  EXEC SQL OPEN cur_save;
+  EXEC SQL FETCH cur_save INTO :cell_code,:hlr_code,:save_code;
+
+  while(SQLCODE == SQL_OK)
+  {
+    ptr=(struct WorkOrderSave *)malloc(sizeof(struct WorkOrderSave));
+    /*fprintf(logfp,"malloc() in get_WorkOrderSave()\n");*/
+    memset(ptr,0x0,sizeof(struct WorkOrderSave));
+
+    /*strncpy(ptr->cell_code,rlspace(cell_code),8);
+    strncpy(ptr->hlr_code,rlspace(hlr_code),8);
+    strncpy(ptr->save_code,rlspace(save_code),8);*/
+    
+    strcpy(ptr->cell_code,rlspace(cell_code));
+    strcpy(ptr->hlr_code,rlspace(hlr_code));
+    strcpy(ptr->save_code,rlspace(save_code));
+
+    head->next=ptr;
+    head=ptr;
+
+    memset(cell_code,0x0,sizeof(cell_code));
+    memset(hlr_code,0x0,sizeof(hlr_code));
+    memset(save_code,0x0,sizeof(save_code));
+
+    EXEC SQL FETCH cur_save INTO :cell_code,:hlr_code,:save_code;
+  }
+
+  if(SQLCODE==NO_MORE_ROWS)
+    ret=0;
+  else
+    ret=-1;
+
+  EXEC SQL CLOSE cur_save;
+
+  return ret;
+}
+
+int get_HlrGroup(struct HlrGroup *head)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+    char tmpsql[1024];
+    char hlr_group[16];
+    char hlr_code[16];
+  EXEC SQL END DECLARE SECTION;
+
+  struct HlrGroup  *ptr;
+  int ret;
+
+  head->next=NULL;
+
+  SQLCODE=SQL_OK;
+  memset(tmpsql,0x0,sizeof(tmpsql));
+  memset(hlr_group,0x0,sizeof(hlr_group));
+  memset(hlr_code,0x0,sizeof(hlr_code));
+
+  memset(tmpsql,0x0,sizeof(tmpsql));
+  sprintf(tmpsql,"SELECT hlr_group,hlr_code FROM cmsHlrGroupConf WHERE use_flag='y' ORDER BY hlr_group,hlr_code");
+  EXEC SQL PREPARE hlr_sql FROM :tmpsql;
+  EXEC SQL DECLARE cur_hlr CURSOR FOR hlr_sql;
+  EXEC SQL OPEN cur_hlr;
+  EXEC SQL FETCH cur_hlr INTO :hlr_group,:hlr_code;
+
+  while(SQLCODE == SQL_OK)
+  {
+    ptr=(struct HlrGroup *)malloc(sizeof(struct HlrGroup));
+    /*fprintf(logfp,"malloc() in get_HlrGroup()\n");*/
+    memset(ptr,0x0,sizeof(struct HlrGroup));
+
+    strncpy(ptr->hlr_group,rlspace(hlr_group),10);
+    strncpy(ptr->hlr_code,rlspace(hlr_code),10);
+
+    head->next=ptr;
+    head=ptr;
+
+    memset(hlr_group,0x0,sizeof(hlr_group));
+    memset(hlr_code,0x0,sizeof(hlr_code));
+
+    EXEC SQL FETCH cur_hlr INTO :hlr_group,:hlr_code;
+  }
+
+  if(SQLCODE==NO_MORE_ROWS)
+    ret=0;
+  else
+    ret=-1;
+
+  EXEC SQL CLOSE cur_hlr;
+
+  return ret;
+}
+
+
+
+
+int get_WorkInfo(char *tablecode,struct OrderInfo *order_tail)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+    char sel_order[1024];
+    char sel_sub[1024];
+    char sel_property[1024];
+    int rec_order,rec_sub,rec_property;
+		char crm_order_id[MAXLINE][64];
+    char oss_order_id[MAXLINE][32];
+    char work_order_id[MAXLINE][32];
+    int order_priority[MAXLINE];
+    char create_time[MAXLINE][16];
+		char process_node_id[MAXLINE][24];
+  	char cut_flag[MAXLINE][10];
+  	char cut_flag_wo[MAXLINE][10];
+  	char property_char[MAXLINE][4127];
+  	char service_no[MAXLINE][64];
+  	char login_no[MAXLINE][64];
+
+    char property_id[MAXLINE][16];
+    char svc_id[MAXLINE][16];
+    char property_value[MAXLINE][512];
+  EXEC SQL END DECLARE SECTION;
+
+  int order_num,sub_num,property_num;
+  struct OrderInfo *order_ptr;
+  struct SubSvcInfo *sub_ptr,*sub_tail;
+  struct PropertyInfo *property_ptr,*property_tail;
+
+  memset(sel_order,0x0,sizeof(sel_order)); /***modify A->0**/
+ 	
+sprintf(sel_order, "SELECT A.crm_order_id,A.contact_id,A.work_item_id,to_char(A.order_CREATE_TIME,'YYYYMMDDHH24MISS'),A.workorder_id,A.PRIORITY,A.ODR_save_code,A.wi_save_code, NVL(A.property_char,'The property_char is NULL!'), NVL(A.SERVICE_NO,'99911112222'), login_no "
+					"FROM so_WorkItem_rd_%s A "
+					"WHERE A.STATUS='X' order by A.ORDER_CREATE_TIME,A.OSS_ORDER_ID,A.DEAL_SEQ ",tablecode);
+  
+  
+	memset(oss_order_id,0x0,sizeof(oss_order_id));
+	memset(work_order_id,0x0,sizeof(work_order_id));
+	memset(crm_order_id,0x0,sizeof(crm_order_id));
+	memset(create_time,0x0,sizeof(create_time));
+	memset(process_node_id,0x0,sizeof(process_node_id));
+	memset(cut_flag,0x0,sizeof(cut_flag));
+	memset(cut_flag_wo,0x0,sizeof(cut_flag_wo));
+	memset(property_char,0x0,sizeof(property_char));
+	memset(service_no,0x0,sizeof(service_no));
+	memset(login_no,0x0,sizeof(login_no));
+	
+	
+	
+  /*** get OssOrder ***/
+  EXEC SQL PREPARE order_sql FROM :sel_order;
+  EXEC SQL DECLARE cur_order CURSOR FOR order_sql;
+  EXEC SQL OPEN cur_order;
+  EXEC SQL FETCH cur_order INTO :crm_order_id,:oss_order_id,:work_order_id,:create_time,:process_node_id,:order_priority,:cut_flag,:cut_flag_wo,:property_char,:service_no,:login_no;
+  
+
+  printf("sel_order=[%s],crm_order_id=[%s],service_no=[%s]\n",sel_order,crm_order_id,service_no);
+  if(SQLCODE!=SQL_OK && SQLCODE!=NO_MORE_ROWS)
+  {
+    fprintf(logfp,"SELECT failed[%s][%d:%s]\n",
+      sel_order,sqlca.sqlcode,sqlca.sqlerrm.sqlerrmc);
+    fflush(logfp);
+    EXEC SQL CLOSE cur_order;
+
+    return -1;
+  }
+
+  if(SQLCODE==NO_MORE_ROWS && SQLROWS==0)
+  {
+    EXEC SQL CLOSE cur_order;
+
+/*    fprintf(logfp,"NO_MORE_ROWS[%ld]!\n",time(NULL));
+    fflush(logfp);*/
+
+    return 0;
+  }
+
+  rec_order=SQLROWS;
+  EXEC SQL CLOSE cur_order;
+
+  fprintf(logfp,"本次共读取待处理数据[%d]条:\n",rec_order);
+  for(order_num=0;order_num<rec_order;order_num++)
+  {
+
+  	
+    order_ptr=(struct OrderInfo *)malloc(sizeof(struct OrderInfo));
+    if(order_ptr==NULL)
+    {
+      fprintf(logfp,"malloc(struct OrderInfo) failed[%d]\n",errno);
+      fflush(logfp);
+
+      EXEC SQL CLOSE cur_order;
+      return -1;
+    }
+
+    memset(order_ptr,0x0,sizeof(struct OrderInfo));
+    strcpy(order_ptr->crm_order_id,rlspace(crm_order_id[order_num]));
+    strcpy(order_ptr->oss_order_id,rlspace(oss_order_id[order_num]));
+    strcpy(order_ptr->work_order_id,rlspace(work_order_id[order_num]));
+    order_ptr->order_priority=order_priority[order_num];
+    strcpy(order_ptr->create_time,rlspace(create_time[order_num]));
+    strcpy(order_ptr->process_node_id,rlspace(process_node_id[order_num]));
+    strcpy(order_ptr->cut_flag,rlspace(cut_flag[order_num]));
+    strcpy(order_ptr->cut_flag_wo,rlspace(cut_flag_wo[order_num]));
+    strcpy(order_ptr->property_char,rlspace(property_char[order_num]));
+    strcpy(order_ptr->service_no,rlspace(service_no[order_num]));
+    strcpy(order_ptr->login_no,rlspace(login_no[order_num]));
+    
+    fprintf(logfp,"\nGET NO[%d]: crm_order_id=[%s],oss_order_id=[%s],service_no=[%s],process_node_id=[%s],property_char=[%s]\n",order_num,order_ptr->crm_order_id,order_ptr->oss_order_id,order_ptr->service_no,order_ptr->process_node_id,order_ptr->property_char);
+    order_tail->next=order_ptr;
+    order_tail=order_ptr;
+	}
+  return rec_order;
+}
+int save_WorkOrder(struct OrderInfo *OrderInfoPtr,struct WorkOrderInfo *WOlist,int wo_num,char *table_code,char wostatus)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+    char wo_sql[2048];
+    char bomc_sql[2048];
+    char upd_sql[1024];
+		char crm_order_id[64];
+    char oss_order_id[32];
+    char work_order_id[32];
+    char service_no[64];
+    int order_priority;
+    char create_time[16];
+    char workorder_id[32];
+    char workorder_datas[4127];
+    char tcode[64];
+    char wo_tcode[64];
+    char login_no[20];
+    int  deal_seq=0;
+    char LoginAcceptSql[1024];
+    char vdayLoginAccept[14+1];
+    char workorder[30+1];
+    char work_item[20+1];
+  EXEC SQL END DECLARE SECTION;
+
+  int i;
+	
+	memset(wo_sql,0x00,sizeof(wo_sql));
+	memset(bomc_sql,0x00,sizeof(upd_sql));
+	memset(upd_sql,0x00,sizeof(upd_sql));
+	memset(vdayLoginAccept,0x00,sizeof(vdayLoginAccept));
+	memset(LoginAcceptSql,0x00,sizeof(LoginAcceptSql));
+	
+	memset(crm_order_id,0x00,sizeof(crm_order_id));
+	memset(oss_order_id,0x00,sizeof(oss_order_id));
+	memset(work_order_id,0x00,sizeof(work_order_id));
+	memset(service_no,0x00,sizeof(service_no));
+	memset(create_time,0x00,sizeof(create_time));
+	memset(workorder_id,0x00,sizeof(workorder_id));
+	memset(workorder_datas,0x00,sizeof(workorder_datas));
+	memset(tcode,0x00,sizeof(tcode));
+	memset(wo_tcode,0x00,sizeof(wo_tcode));
+	memset(login_no,0x00,sizeof(login_no));
+	memset(workorder,0x00,sizeof(workorder));
+	memset(work_item,0x00,sizeof(work_item));
+	
+	strcpy(crm_order_id,OrderInfoPtr->crm_order_id);
+  strcpy(oss_order_id,OrderInfoPtr->oss_order_id);
+  strcpy(work_order_id,OrderInfoPtr->work_order_id);
+  strcpy(service_no,OrderInfoPtr->service_no);
+  order_priority=OrderInfoPtr->order_priority;
+  strcpy(create_time,OrderInfoPtr->create_time);
+  strcpy(wo_tcode,OrderInfoPtr->hlr_code);
+  strcpy(login_no,OrderInfoPtr->login_no);
+  strcpy(workorder,OrderInfoPtr->process_node_id);
+  strcpy(work_item,OrderInfoPtr->work_order_id);
+  strcpy(tcode,wo_tcode);
+  
+  for(i=0;i<wo_num;i++)
+  { 
+  	printf("++++++++++++++++++++++++++++\n");
+  	
+  	memset(vdayLoginAccept,0X00,sizeof(vdayLoginAccept));
+  	EXEC SQL SELECT  to_char(sysdate,'YYMMDD')||work_order_id_seq.nextval 
+  	    INTO :vdayLoginAccept 
+  	        FROM DUAL;
+  	
+	    if(SQLCODE != SQL_OK)
+	    {
+	      fprintf(logfp,"get loginAccept error");
+	      fflush(logfp);
+	      EXEC SQL ROLLBACK WORK; 
+	      break;
+	    }
+	    
+    sprintf(wo_sql,"INSERT INTO %s (crm_order_id,COMMAND_ID,LOGIN_ACCEPT,HLR_CODE,BELONG_CODE,SEND_STATUS,OP_TIME, REQUEST_TIME,send_time,ID_NO,SM_CODE,COMMAND_CODE,GROUP_ID,ORG_ID,PHONE_NO, OTHER_CHAR,COMMAND_ORDER,login_no,WORKORDER_ID,WORK_ITEM_ID) VALUES(:crm_order_id,:vdayLoginAccept,:work_order_id,:wo_tcode,:order_priority, '%c',sysdate,to_date(:create_time,'yyyymmddhh24miss'),sysdate,1,'F', :workorder_id,:tcode,:wo_tcode,:service_no,:workorder_datas, :deal_seq,:login_no,:workorder,:work_item)\0",WOlist[i].wo_tablecode,wostatus);
+    fprintf(logfp,"\nseq=[%s],command:[%d] workorder_send[%c]-workorder_type[%c]-cell_code[%s]-hlr_group[%s]-workorder_id[%s]-workorder_seq[%d]-wo_tablecode[%s]-workorder_datas[%s]\n",vdayLoginAccept,i,WOlist[i].workorder_send,WOlist[i].workorder_type,WOlist[i].cell_code,WOlist[i].hlr_group,WOlist[i].workorder_id,WOlist[i].workorder_seq,WOlist[i].wo_tablecode,WOlist[i].workorder_datas);
+    
+  
+    if(WOlist[i].workorder_send==IS_REDUCE || WOlist[i].workorder_type==NOT_SEND)
+      continue;
+    fprintf(logfp,"INSERT NO[%d]: table_name=[%s],crm_order_id=[%s],workorder_id = [%s]\n",i,WOlist[i].wo_tablecode,crm_order_id,OrderInfoPtr->process_node_id);
+    strcpy(workorder_id,WOlist[i].workorder_id);
+    strcpy(workorder_datas,WOlist[i].workorder_datas);
+     printf("##########################[%s]",workorder_datas);
+    deal_seq=WOlist[i].workorder_seq;
+    
+    EXEC SQL PREPARE stmt FROM :wo_sql;
+    EXEC SQL EXECUTE stmt using :crm_order_id,:vdayLoginAccept,:oss_order_id,:wo_tcode,:order_priority,:create_time,:workorder_id,:tcode,:wo_tcode,:service_no,:workorder_datas,:deal_seq,:login_no,:workorder,:work_item;
+    if(SQLCODE != SQL_OK)
+    {
+      fprintf(logfp,"SQL:%s[%s,%s,%d,%s,%s,%s,%s,%s,%s,%d][%d:%s][%ld]\n",wo_sql,login_no,oss_order_id,order_priority,create_time,workorder_id,tcode,wo_tcode,service_no,workorder_datas,deal_seq,sqlca.sqlcode,sqlca.sqlerrm.sqlerrmc,time(NULL));
+      
+      fprintf(logfp,"crm_order_id=[%s],vdayLoginAccept=[%s],work_order_id=[%s],wo_tcode=[%s],order_priority=[%d],to_date(create_time=[%s],'yyyymmddhh24miss'),workorder_id=[%s],tcode=[%s],wo_tcode=[%s],service_no=[%s],workorder_datas=[%s],deal_seq=[%d],login_no=[%s],workorder=[%s],work_item=[%s]",crm_order_id,vdayLoginAccept,work_order_id,wo_tcode,order_priority,create_time,workorder_id,tcode,wo_tcode,service_no,workorder_datas,deal_seq,login_no,workorder,work_item);
+      
+      fflush(logfp);
+      EXEC SQL ROLLBACK WORK;
+			wo_num = -1;
+      break;
+    }
+  	sprintf(bomc_sql,"INSERT INTO WORKORDERBOMC(seq_no,unicontact_id,csystem_id,phone_no,login_no,work_item_id,command_id,op_code,deal_flag,deal_info,deal_time) VALUES (to_char(sysdate,'YYYYMM')||BOMC_SEQ.Nextval,:oss_order_id,'WLJH',:service_no,:login_no,:work_order_id,:vdayLoginAccept,:workorder,'0','成功',sysdate)");
+  	EXEC SQL PREPARE stmt FROM :bomc_sql;
+ 	  EXEC SQL  EXECUTE stmt using :oss_order_id,:service_no,:login_no,:work_order_id,:vdayLoginAccept,:workorder;
+    if(SQLCODE != SQL_OK)
+   {
+    	fprintf(logfp,"SQL:%s[%s][%d: %80s][%ld]\n",
+      bomc_sql,work_order_id,
+      sqlca.sqlcode,sqlca.sqlerrm.sqlerrmc,time(NULL));
+   		fflush(logfp);
+
+      return -1;
+  }
+  fprintf(logfp,"INSERT: table_name=[WORKORDERBOMC],crm_order_id=[%s],workorder_id = [%s]\n",crm_order_id,OrderInfoPtr->process_node_id);
+  }
+  if(wo_num < 0)
+  { 
+   	sprintf(upd_sql,"UPDATE so_WorkItem_rd_%s SET status='F',ret_msg='no find command!', operate_time=sysdate WHERE work_item_id=:work_order_id\0",table_code);
+   
+	}else if(wo_num == 0) 
+		 {
+  	sprintf(upd_sql,"UPDATE so_WorkItem_rd_%s SET status='E',ret_msg='no resolve order!',operate_time=sysdate WHERE work_item_id=:work_order_id\0",table_code);
+  	
+	}else
+  {
+  	sprintf(upd_sql,"UPDATE so_WorkItem_rd_%s SET status='E',ret_msg='success!',operate_time=sysdate WHERE work_item_id=:work_order_id\0",table_code);
+  	
+	}
+  EXEC SQL PREPARE stmt FROM :upd_sql;
+  EXEC SQL  EXECUTE stmt using :work_order_id;
+  if(SQLCODE != SQL_OK)
+  {
+    fprintf(logfp,"SQL:%s[%s][%d: %80s][%ld]\n",
+      upd_sql,work_order_id,
+      sqlca.sqlcode,sqlca.sqlerrm.sqlerrmc,time(NULL));
+    fflush(logfp);
+
+    EXEC SQL ROLLBACK WORK;
+
+    return -1;
+  }
+ 	
+  EXEC SQL COMMIT WORK;
+  return wo_num;
+}
+
+
+/*** add by zhr 2013/4/18 为物联网增加长流程回写程序 ***/
+int get_WorkInfo_back(char *tablecode,struct OrderInfo *order_tail)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+    char sel_order[1024];
+    char sel_sub[1024];
+    char sel_property[1024];
+    int rec_order,rec_sub,rec_property;
+		char crm_order_id[MAXLINE][64];
+    char oss_order_id[MAXLINE][32];
+    char work_order_id[MAXLINE][32];
+    int order_priority[MAXLINE];
+    char create_time[MAXLINE][16];
+		char process_node_id[MAXLINE][24];
+  	char cut_flag[MAXLINE][10];
+  	char cut_flag_wo[MAXLINE][10];
+  	char property_char[MAXLINE][4127];
+  	char service_no[MAXLINE][64];
+  	char login_no[MAXLINE][64];
+
+    char property_id[MAXLINE][16];
+    char svc_id[MAXLINE][16];
+    char property_value[MAXLINE][512];
+  EXEC SQL END DECLARE SECTION;
+
+  int order_num,sub_num,property_num;
+  struct OrderInfo *order_ptr;
+  struct SubSvcInfo *sub_ptr,*sub_tail;
+  struct PropertyInfo *property_ptr,*property_tail;
+
+  memset(sel_order,0x0,sizeof(sel_order)); /***modify A->0**/
+ 	
+sprintf(sel_order, "SELECT A.crm_order_id,A.contact_id,A.work_item_id,to_char(A.order_CREATE_TIME,'YYYYMMDDHH24MISS'),A.workorder_id,A.PRIORITY,A.ODR_save_code,A.wi_save_code, NVL(A.property_char,'The property_char is NULL!'), NVL(A.SERVICE_NO,'99911112222'), login_no "
+					"FROM so_WorkItem_rd_%s A "
+					"WHERE A.STATUS='E' order by A.ORDER_CREATE_TIME,A.OSS_ORDER_ID,A.DEAL_SEQ ",tablecode);
+  
+  
+	memset(oss_order_id,0x0,sizeof(oss_order_id));
+	memset(work_order_id,0x0,sizeof(work_order_id));
+	memset(crm_order_id,0x0,sizeof(crm_order_id));
+	memset(create_time,0x0,sizeof(create_time));
+	memset(process_node_id,0x0,sizeof(process_node_id));
+	memset(cut_flag,0x0,sizeof(cut_flag));
+	memset(cut_flag_wo,0x0,sizeof(cut_flag_wo));
+	memset(property_char,0x0,sizeof(property_char));
+	memset(service_no,0x0,sizeof(service_no));
+	memset(login_no,0x0,sizeof(login_no));
+	
+	
+	
+  /*** get OssOrder ***/
+  EXEC SQL PREPARE order_sql FROM :sel_order;
+  EXEC SQL DECLARE cur_order CURSOR FOR order_sql;
+  EXEC SQL OPEN cur_order;
+  EXEC SQL FETCH cur_order INTO :crm_order_id,:oss_order_id,:work_order_id,:create_time,:process_node_id,:order_priority,:cut_flag,:cut_flag_wo,:property_char,:service_no,:login_no;
+  
+
+  
+  if(SQLCODE!=SQL_OK && SQLCODE!=NO_MORE_ROWS)
+  {
+    fprintf(logfp,"SELECT failed[%s][%d:%s]\n",
+      sel_order,sqlca.sqlcode,sqlca.sqlerrm.sqlerrmc);
+    fflush(logfp);
+    EXEC SQL CLOSE cur_order;
+
+    return -1;
+  }
+
+  if(SQLCODE==NO_MORE_ROWS && SQLROWS==0)
+  {
+    EXEC SQL CLOSE cur_order;
+
+/*    fprintf(logfp,"NO_MORE_ROWS[%ld]!\n",time(NULL));
+    fflush(logfp);*/
+
+    return 0;
+  }
+
+  rec_order=SQLROWS;
+  EXEC SQL CLOSE cur_order;
+
+  fprintf(logfp,"本次共读取待处理数据[%d]条:\n",rec_order);
+  for(order_num=0;order_num<rec_order;order_num++)
+  {
+
+  	
+    order_ptr=(struct OrderInfo *)malloc(sizeof(struct OrderInfo));
+    if(order_ptr==NULL)
+    {
+      fprintf(logfp,"malloc(struct OrderInfo) failed[%d]\n",errno);
+      fflush(logfp);
+
+      EXEC SQL CLOSE cur_order;
+      return -1;
+    }
+
+    memset(order_ptr,0x0,sizeof(struct OrderInfo));
+    strcpy(order_ptr->crm_order_id,rlspace(crm_order_id[order_num]));
+    strcpy(order_ptr->oss_order_id,rlspace(oss_order_id[order_num]));
+    strcpy(order_ptr->work_order_id,rlspace(work_order_id[order_num]));
+    order_ptr->order_priority=order_priority[order_num];
+    strcpy(order_ptr->create_time,rlspace(create_time[order_num]));
+    strcpy(order_ptr->process_node_id,rlspace(process_node_id[order_num]));
+    strcpy(order_ptr->cut_flag,rlspace(cut_flag[order_num]));
+    strcpy(order_ptr->cut_flag_wo,rlspace(cut_flag_wo[order_num]));
+    strcpy(order_ptr->property_char,rlspace(property_char[order_num]));
+    strcpy(order_ptr->service_no,rlspace(service_no[order_num]));
+    strcpy(order_ptr->login_no,rlspace(login_no[order_num]));
+    
+    fprintf(logfp,"\nGET NO[%d]: crm_order_id=[%s],oss_order_id=[%s],service_no=[%s],process_node_id=[%s],property_char=[%s]\n",order_num,order_ptr->crm_order_id,order_ptr->oss_order_id,order_ptr->service_no,order_ptr->process_node_id,order_ptr->property_char);
+    order_tail->next=order_ptr;
+    order_tail=order_ptr;
+	}
+  return rec_order;
+}
+
+/*** add by zhr 2013/4/18 为物联网增加长流程回写程序 ***/
+int wrtback_so_Ack(struct OrderInfo *OrderInfoPtr,struct WorkOrderInfo *WOlist,int wo_num,char *table_code,char wostatus)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+    char wo_sql[2048];
+    char upd_sql[2048];
+    char so_ret_code[10+1];
+    char so_ret_msg[1000+1];
+    char work_item[20+1];
+    int count;  /*工单记录数*/
+    int count0; /*未处理工单*/
+    int counta; /*失败工单*/
+  EXEC SQL END DECLARE SECTION;
+  
+  int i;
+	
+	strcpy(work_item,OrderInfoPtr->work_order_id);
+	
+	for (i=0;i<wo_num;i++)
+  {
+  	printf("++++++++++++++++++++++++++++1\n");
+
+  	count=0;
+  	memset(wo_sql, 0x0, sizeof(wo_sql));
+    sprintf(wo_sql,"SELECT  COUNT(*) FROM %s WHERE WORK_ITEM_ID='%s'\0",WOlist[i].wo_tablecode,OrderInfoPtr->work_order_id);
+    EXEC SQL PREPARE ssg_sql FROM :wo_sql;
+	  EXEC SQL DECLARE cur_relp CURSOR FOR ssg_sql;
+	  EXEC SQL OPEN cur_relp;
+	  EXEC SQL FETCH cur_relp INTO :count;
+  	
+    if (SQLCODE != SQL_OK)
+    {
+      EXEC SQL ROLLBACK WORK;
+			wo_num = -1;
+      return -1;
+    }
+    if (count == 0) /*工单分解异常，直接回写失败*/
+    {
+    		memset(so_ret_code, 0x0, sizeof(so_ret_code));
+    		memset(so_ret_msg, 0x0, sizeof(so_ret_msg));
+    		strcpy(so_ret_code, "1");
+    		strcpy(so_ret_msg, "NO WORK ORDER!!CMS_PARSE ERROR!");
+    		break;
+    }
+    
+  	count0=0;
+  	memset(wo_sql, 0x0, sizeof(wo_sql));
+    sprintf(wo_sql,"SELECT  COUNT(*) FROM %s WHERE WORK_ITEM_ID='%s' AND SEND_STATUS='0'\0",WOlist[i].wo_tablecode,OrderInfoPtr->work_order_id);
+    EXEC SQL PREPARE ssg_sql FROM :wo_sql;
+	  EXEC SQL DECLARE cur_relp CURSOR FOR ssg_sql;
+	  EXEC SQL OPEN cur_relp;
+	  EXEC SQL FETCH cur_relp INTO :count0;
+  	
+    if (SQLCODE != SQL_OK)
+    {
+      EXEC SQL ROLLBACK WORK;
+			wo_num = -1;
+      return -1;
+    }
+    
+    counta=0;
+    memset(wo_sql, 0x0, sizeof(wo_sql));
+    sprintf(wo_sql,"SELECT  COUNT(*) FROM %s WHERE WORK_ITEM_ID='%s' AND SEND_STATUS IN ('A','B','C','D')\0",WOlist[i].wo_tablecode,OrderInfoPtr->work_order_id);
+    EXEC SQL PREPARE pre_sql0 FROM :wo_sql;
+	  EXEC SQL DECLARE cur0 CURSOR FOR pre_sql0;
+	  EXEC SQL OPEN cur0;
+	  EXEC SQL FETCH cur0 INTO :counta;
+  	
+    if (SQLCODE != SQL_OK)
+    {
+      EXEC SQL ROLLBACK WORK;
+			wo_num = -1;
+      return -1;
+    }
+
+    if (count0>0)
+    {  		
+    		return -2;
+    }
+    else if (counta>0)
+    {
+    		memset(so_ret_code, 0x0, sizeof(so_ret_code));
+    		memset(so_ret_msg, 0x0, sizeof(so_ret_msg));
+    		strcpy(so_ret_code, "1");
+    		
+    		memset(wo_sql, 0x0, sizeof(wo_sql));
+		    sprintf(wo_sql,"SELECT  NVL(TO_CHAR(wm_concat(trim(ack_info))),' ') FROM %s WHERE WORK_ITEM_ID='%s' AND SEND_STATUS IN ('A','B','C','D')\0",WOlist[i].wo_tablecode,OrderInfoPtr->work_order_id);
+		    EXEC SQL PREPARE pre_sql1 FROM :wo_sql;
+			  EXEC SQL DECLARE cur1 CURSOR FOR pre_sql1;
+			  EXEC SQL OPEN cur1;
+			  EXEC SQL FETCH cur1 INTO :so_ret_msg;
+			  		  	
+		    if(SQLCODE != SQL_OK)
+		    {
+		      EXEC SQL ROLLBACK WORK;
+					wo_num = -1;
+			
+		      return -1;
+		    }
+    
+    		break;
+    }
+    else
+    {
+    		memset(so_ret_code, 0x0, sizeof(so_ret_code));
+    		memset(so_ret_msg, 0x0, sizeof(so_ret_msg));
+    		strcpy(so_ret_code, "0");
+    		strcpy(so_ret_msg, "success");
+    }
+    
+  }
+ 
+  /*** 回写so_workitrm表 ***/
+  memset(upd_sql, 0x0, sizeof(upd_sql));
+  sprintf(upd_sql,"UPDATE so_WorkItem_rd_%s SET operate_time=sysdate,status='0',ret_code='%s',ret_msg='%s' WHERE work_item_id=:work_item\0",table_code,so_ret_code,so_ret_msg);
+  EXEC SQL PREPARE stmt FROM :upd_sql;
+  EXEC SQL  EXECUTE stmt using :work_item;
+
+  if (SQLCODE != SQL_OK)
+  {
+    fprintf(logfp,"UPSQL:%s[%s][%d: %80s][%ld]\n",
+      upd_sql,work_item,
+      sqlca.sqlcode,sqlca.sqlerrm.sqlerrmc,time(NULL));
+    fflush(logfp);
+
+    EXEC SQL ROLLBACK WORK;
+
+    return -1;
+  }
+  
+  EXEC SQL COMMIT WORK;
+  return 1;
+}
+
+int up_workorder(struct OrderInfo *OrderInfoPtr,char *intablecode,char inflag,char *indesc)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+    char upd_sql[1024];
+		char crm_order_id[64];
+    char oss_order_id[32];
+    char work_order_id[32];
+    char desc[1204];
+    char table_code[32];
+  EXEC SQL END DECLARE SECTION;
+  
+  strcpy(crm_order_id,OrderInfoPtr->crm_order_id);
+  strcpy(oss_order_id,OrderInfoPtr->oss_order_id);
+  strcpy(work_order_id,OrderInfoPtr->work_order_id);
+  strcpy(desc,indesc);
+  strcpy(table_code,intablecode);
+  
+  sprintf(upd_sql,"UPDATE so_WorkItem_rd_%s SET status='%c',operate_time=sysdate,err_msg='%s' WHERE work_item_id=:work_order_id\0",table_code,inflag,desc);
+	printf("upd_sql===[%s]\n",upd_sql);
+	
+	EXEC SQL PREPARE stmt FROM :upd_sql;
+  EXEC SQL  EXECUTE stmt using :work_order_id;
+
+  if(SQLCODE != SQL_OK)
+  {
+    fprintf(logfp,"UPSQL:%s[%s][%d: %80s][%ld]\n",
+      upd_sql,work_order_id,
+      sqlca.sqlcode,sqlca.sqlerrm.sqlerrmc,time(NULL));
+    fflush(logfp);
+
+    EXEC SQL ROLLBACK WORK;
+
+    return -1;
+  }
+
+	
+  EXEC SQL COMMIT WORK;
+  return 0;
+}
+
+
+int get_RelaPropGroup(struct RelaPropGroup *head)
+{
+ EXEC SQL BEGIN DECLARE SECTION;
+    char tmpsql[1024];
+    char main_svc_id[10+1];	
+    char main_action_group[8+1];	
+    char relaprop_id[60+1];
+    char svc_id[10+1];
+    char prop_id[60+1];
+    char prop_val[60+1];
+  EXEC SQL END DECLARE SECTION;
+
+  struct RelaPropGroup  *ptr;
+  int ret;
+  head->next=NULL;
+
+  SQLCODE=SQL_OK;
+ 
+  memset(main_svc_id,0x0,sizeof(main_svc_id));
+  memset(main_action_group,0x0,sizeof(main_action_group));
+  memset(svc_id,0x0,sizeof(svc_id)); 
+  memset(prop_id,0,sizeof(prop_id));
+  memset(prop_val,0,sizeof(prop_val));
+  memset(relaprop_id,0,sizeof(relaprop_id));
+
+  memset(tmpsql,0x0,sizeof(tmpsql));
+  sprintf(tmpsql,"select t.property_group_id,t.main_svc_id,t.main_action_group,t.svc_id,t.property_id,t.property_value from spmsPropertyGroup t  order by t.property_group_id,t.property_seq");
+  EXEC SQL PREPARE ssg_sql FROM :tmpsql;
+  EXEC SQL DECLARE cur_relp CURSOR FOR ssg_sql;
+  EXEC SQL OPEN cur_relp;
+  EXEC SQL FETCH cur_relp INTO :relaprop_id,:main_svc_id,:main_action_group,:svc_id,:prop_id,:prop_val;
+
+  while(SQLCODE == SQL_OK)
+  {
+    ptr=(struct RelaPropGroup *)malloc(sizeof(struct RelaPropGroup));
+    fprintf(logfp,"malloc() in get_RelaPropGroup()\n");
+    memset(ptr,0x0,sizeof(struct RelaPropGroup));
+ 
+    strncpy(ptr->main_svc_id,rlspace(main_svc_id),10);
+    strncpy(ptr->main_action_group,rlspace(main_action_group),8);
+    strncpy(ptr->svc_id,rlspace(svc_id),10);
+    strncpy(ptr->relaprop_id,rlspace(relaprop_id),10);
+    strncpy(ptr->prop_id,rlspace(prop_id),10);
+    strncpy(ptr->prop_val,rlspace(prop_val),60);
+   
+  
+    fprintf(logfp,"ptr->main_svc_id[%s]--ptr->main_action_group[%s]--ptr->svc_id[%s]---ptr->prop_id[%s]",ptr->main_svc_id,ptr->main_action_group,ptr->svc_id,ptr->prop_id);
+    head->next=ptr;
+    head=ptr;
+  
+    memset(main_svc_id,0x0,sizeof(main_svc_id));
+    memset(main_action_group,0x0,sizeof(main_action_group));
+    memset(svc_id,0x0,sizeof(svc_id)); 
+    memset(prop_id,0,sizeof(prop_id));
+    memset(relaprop_id,0,sizeof(relaprop_id));
+    memset(prop_val,0,sizeof(prop_val));
+
+    EXEC SQL FETCH cur_relp INTO :relaprop_id,:main_svc_id,:main_action_group,:svc_id,:prop_id,:prop_val;
+  }
+
+  if(SQLCODE==NO_MORE_ROWS)
+    ret=0;
+  else
+    ret=-1;
+
+  EXEC SQL CLOSE cur_relp;
+
+  return ret;	
+
+
+}
+
+/****订单上没有属性直接竣工更新状态为1****/
+int Update_ErrWorkOrder(struct OrderInfo *OrderInfoPtr,char *table_code)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+    char wo_sql[1024];
+    char upd_sql[1024];
+    char oss_order_id[32];
+   
+  EXEC SQL END DECLARE SECTION;
+
+  int i;
+
+  fprintf(logfp,"--%s-%s-%d-%s-\n",
+    OrderInfoPtr->oss_order_id,
+    OrderInfoPtr->service_no,
+    OrderInfoPtr->order_priority,
+    OrderInfoPtr->create_time);
+
+  strcpy(oss_order_id,OrderInfoPtr->oss_order_id);
+
+ 
+
+  sprintf(upd_sql,"UPDATE spmswOssOrders%s SET status='1',operate_time=sysdate WHERE oss_order_id=:oss_order_id\0",table_code);
+ printf("upd_sql===[%s]\n",upd_sql);
+
+  EXEC SQL PREPARE stmt FROM :upd_sql;
+  EXEC SQL  EXECUTE stmt using :oss_order_id;
+
+  if(SQLCODE != SQL_OK)
+  {
+    fprintf(logfp,"SQL:%s[%s][%d: %80s][%ld]\n",
+      upd_sql,oss_order_id,
+      sqlca.sqlcode,sqlca.sqlerrm.sqlerrmc,time(NULL));
+    fflush(logfp);
+
+    EXEC SQL ROLLBACK WORK;
+
+    return -1;
+  }
+
+  EXEC SQL COMMIT WORK;
+
+  return 0;
+}
+
+int get_NewMsisdninhlr(char *newmsisdn_seg,char *newhlr_code)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	char msisdn_seg[7+1];
+	char hlr_code[3+1];
+	char tmpsql[1024];
+	EXEC SQL END DECLARE SECTION;
+	
+	memset(msisdn_seg,0x00,sizeof(msisdn_seg));
+	memset(hlr_code,0x00,sizeof(hlr_code));
+	memset(tmpsql,0x00,sizeof(tmpsql));
+
+	strncpy(msisdn_seg,newmsisdn_seg,7);
+
+	sprintf(tmpsql,"SELECT DISTINCT TRIM(b.hlr_code) FROM RS_NOHLR_REL a,MSISDNINHLR b WHERE a.phone_head='%s' and a.hlr_code=b.old_hlr_code",msisdn_seg);
+	EXEC SQL PREPARE MainSvc_sql FROM :tmpsql;
+	EXEC SQL DECLARE cur_MainSvc CURSOR FOR MainSvc_sql;
+	EXEC SQL OPEN cur_MainSvc;
+	EXEC SQL FETCH cur_MainSvc INTO :hlr_code;
+	hlr_code[3]=0;
+	if(strlen(hlr_code)<1) return -1;
+	else 
+		{
+			strcpy(newhlr_code,hlr_code);
+			return 1;
+		}
+}
+
+int put_NewMsisdnintotab(char *newmsisdn_seg)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	char msisdn_seg[7+1];
+	char tmpsql[1024];
+	EXEC SQL END DECLARE SECTION;
+
+	memset(msisdn_seg,0x00,sizeof(msisdn_seg));
+	memset(tmpsql,0x00,sizeof(tmpsql));
+	
+	strncpy(msisdn_seg,newmsisdn_seg,7);
+	sprintf(tmpsql,"INSERT INTO MSISDNINHLR VALUE(select DISTINCT TRIM(a.phone_head),TRIM(b.hlr_code),'Y',TRIM(a.hlr_code)  from rs_nohlr_rel a , msisdninhlr b where a.phone_head='%s' and a.hlr_code=b.old_hlr_code)",msisdn_seg);
+	EXEC SQL PREPARE stmt FROM :tmpsql;
+	EXEC SQL EXECUTE stmt;
+	if(SQLCODE != SQL_OK)
+	{
+		fprintf(logfp,"insert into msisdninhlr error");
+    fflush(logfp);
+		EXEC SQL ROLLBACK WORK;
+		return -1;
+	}
+	else return 1;
+
+}

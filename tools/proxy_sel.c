@@ -12,12 +12,16 @@
 #endif /*__WIN32__*/
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <sys/time.h>
 
 /*
  * 这是一个端口映射程序， 使用配置文件 conf/ports.conf, 格式如下：
  * listen_port remote_addr remote_port
+ * 9191 172.21.3.187 22
+ * 9192
  * */
 
 #define SOCKTYPE_LISTEN   1
@@ -31,6 +35,7 @@ struct sockdata{
     int    local_port;
     struct sockaddr_in remote_addr;
     struct sockdata *other;
+    time_t last_active;                //最后活动时间， 用于检测超时
 
     struct sockdata *next;
 };
@@ -242,27 +247,32 @@ int main(int argc, char *argv[]) {
     struct timeval tvl;
     int need_exit = 0;
 
+    if(argc > 1)
+        conf = argv[1];
     socket_init(); // for win32, invoke WSAStartup
     sockhead.next = NULL;
     read_file(conf, bind_port, 3, &sockhead);
 
-    tvl.tv_sec = timeout / 1000;
-    tvl.tv_usec = (timeout % 1000) * 1000;
 
     while(1){
         maxfd = 0;
         FD_ZERO (&rfd);
+        tvl.tv_sec = timeout / 1000;
+        tvl.tv_usec = (timeout % 1000) * 1000;
+
+        //printf("begin select...\n");
         for (s1=&sockhead,s = sockhead.next; s; s1=s,s=s->next)
         {
             if(s->sock < 0) {
-                // marked closed
+                /* marked closed */
+                printf("remove paired sock\n");
                 s1->next = s->next;
                 free(s);
                 s = s1;
-                continue;
+            }else{
+                FD_SET (s->sock, &rfd);
+                maxfd = (s->sock > maxfd) ? s->sock : maxfd;
             }
-            FD_SET (s->sock, &rfd);
-            maxfd = (s->sock > maxfd) ? s->sock : maxfd;
         }
         maxfd += 1;
 
@@ -276,28 +286,35 @@ int main(int argc, char *argv[]) {
             // timeout
             continue;
         }
-        for (s1=&sockhead,s = sockhead.next; s; s1=s,s=s->next){
+
+        for(s=sockhead.next;s;s=s->next){
+            if(s->sock < 0) continue;
             if (FD_ISSET (s->sock, &rfd) ){
-                if(s->type == SOCKTYPE_LISTEN){
-                    //accept
-                    accept_connection(s, &sockhead);
-                }else if(s->type == SOCKTYPE_CONNECT_LOCAL || s->type == SOCKTYPE_CONNECT_REMOTE){
+                if(s->type == SOCKTYPE_CONNECT_LOCAL || s->type == SOCKTYPE_CONNECT_REMOTE){
                     //read data
                     ret = recv_data(s);
                     if(ret == 0){
                         // remote reset connection
-                        printf("close pair: %d-%d\n", s->sock, s->other->sock);
+                        printf("close pair: %d-%d s1: %x s: %x\n",
+                               s->sock, s->other->sock, s1, s);
                         tcp_close(s->sock);
                         tcp_close(s->other->sock);
-                        s1->next = s->next;
+                        s->sock = -1;
+                        s->other->sock = -1;
+                        /*s1->next = s->next;
                         s->other->sock = -1; //mark to close other connection
                         free(s);
                         s = s1;
+                        printf("done\n"); */
+
                     }else if(ret < 0) {
                         printf("read data failed\n");
                         need_exit = 1;
                         break;
                     }
+                }else if(s->type == SOCKTYPE_LISTEN){
+                    //accept
+                    accept_connection(s, &sockhead);
                 }
             }
 

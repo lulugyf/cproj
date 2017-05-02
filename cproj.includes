@@ -28,3 +28,10 @@ csf_sc/framework/tools/NGDBINFOGET
 csf_sc/sh/cppcompile_file/cppcompile
 offon
 tools
+csf_sc/framework/pub/libcallesbcurl/curl_home_linux/src
+csf_sc/framework/pub/libcallesbcurl/curl_home_linux/lib
+csf_sc/framework/pub/libcallesbcurl/curl_home_linux/bin
+csf_sc/framework/pub/libcallesbcurl/curl_home_linux/lib/pkgconfig
+tools/conf
+cms
+csf_sc/framework/pub/libcallesbcurl

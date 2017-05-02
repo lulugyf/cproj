@@ -68,6 +68,8 @@
 				reply_info=:v2 WHERE stream_id=:v3",hlr);
 				则格式为 STREAM_ID | REPLY_CODE | REPLY_INFO
 
+2016-9-7
+  需要增加一个查询接口， 查询当前内存中的各类型指令数量， 以及连接的各端口列表
 */
 int usedb_flag = 0;
 int max_queue_len = -1;
@@ -778,6 +780,7 @@ int get_one_order(struct comm_info *ptr,time_t cur_t)
     const int loop_limit = 5000;
     int loop_i = 0;
 
+    /* printf("--get_one_order--\n"); // VVV */
 	switch(ptr->termtype)
 	{
 	case TERM_HLR:
@@ -791,6 +794,7 @@ int get_one_order(struct comm_info *ptr,time_t cur_t)
 		{
 			priptr=pritail->next;
 			pidx1 = &priptr->phonehead;
+
 			while(pidx1->next)
 			{ /*** 取得该号码的命令存储地址 ***/
                 loop_i ++;
@@ -801,8 +805,11 @@ int get_one_order(struct comm_info *ptr,time_t cur_t)
 				pidx2 = pidx1->next;
 				pwaitptr=get_pwaitnode(NULL,pidx2->phead,
 						pidx2->ptail, 1);
-				if(pwaitptr==NULL || pwaitptr->cmdhead.next==NULL)
+                /* printf("--phone=%d %d get_pwaitnode return NULL? %d\n",
+                       pidx2->phead, pidx2->ptail, pwaitptr == NULL); // VVV */
+                if(pwaitptr==NULL || pwaitptr->cmdhead.next==NULL)
 				{ /*** 该号码没有待发送命令 ***/
+                    /* printf("--no command, remove priority--\n"); // VVV */
 					priptr->num--;
 					if(pidx2->next == NULL && priptr->num > 0){
 						//如果是尾部, 但还有其它节点, 把尾指针指到上一个节点
@@ -825,12 +832,15 @@ int get_one_order(struct comm_info *ptr,time_t cur_t)
 
 				if(pwaitptr->status>0 && ptr->termtype!=pwaitptr->type)
 				{ /*** 该号码处于忙状态 ***/
+                    /*printf("--pwaitptr is busy: %d  termtype=%c pwait-type: %c--\n",
+                           pwaitptr->status, ptr->termtype, pwaitptr->type); // VVV */
 					pidx1=pidx1->next;
 					continue;
 				}
 
 				if(cur_t-pwaitptr->status<120)
 				{ /*** 该号码处于忙状态 ***/
+                    /* printf("--wait reply: %d--\n", cur_t-pwaitptr->status); // VVV */
 					pidx1=pidx1->next;
 					continue;
 				}
@@ -838,6 +848,8 @@ int get_one_order(struct comm_info *ptr,time_t cur_t)
 				cwaitptr=&pwaitptr->cmdhead;
 				if(ptr->termtype != cwaitptr->next->orderhead.next->type)
 				{ /*** 指令类型不匹配 ***/
+                   /* printf("--mismatch order-type: term: %c order: %c--\n",
+                           ptr->termtype, cwaitptr->next->orderhead.next->type); // VVV */
 					pidx1=pidx1->next;
 					continue;
 				}
@@ -890,9 +902,9 @@ int get_one_order(struct comm_info *ptr,time_t cur_t)
 				memcpy(cmdackptr->ss_info3,cwaitptr->ss_info3,SSINFO3LEN);
                 /*memcpy(cmdackptr->queryinfo,cwaitptr->queryinfo,QUERYINFOLEN); */
 
-				/*sprintf(tmp, "gto[%ld %s %s %d]",
+                /*printf("got[%ld %s %s %d]\n",
 						cwaitptr->streamid, cwaitptr->cmdid, cwaitptr->msisdn, cwaitptr->cmdcode);
-				print_cwait(tmp, logfp, pwaitptr->cmdhead.next); */
+                print_cwait(tmp, stdout, pwaitptr->cmdhead.next); */
 
 				return 1;
 			}
@@ -1704,6 +1716,10 @@ int main(int argc,char **argv)
 					userptr=userhead.next;
 					while(userptr)
 					{
+                        /*printf("input: hlrcode:%s hlrport:%c termtype: %c \n",
+                               loginreqptr->hlrcode, loginreqptr->hlrport, loginreqptr->termtype);
+                        printf("conf: hlrcode:%s hlrport:%c termtype: %c \n",
+                               userptr->hlrcode, userptr->hlrport, userptr->type); */
 						if(strncmp(userptr->hlrcode,loginreqptr->hlrcode,3)==0 && userptr->hlrport==loginreqptr->hlrport && userptr->type==loginreqptr->termtype)
 						{
 							memset(loginuser,0x0,sizeof(loginuser));

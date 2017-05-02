@@ -1,0 +1,581 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
+/*#include <varargs.h>*/
+#include <errno.h>
+#include <sqlca.h>
+#include <sqlda.h>
+#include <stdarg.h>
+#include "pay_utils.h"
+#include "pay_db.h"
+
+
+
+#define   NOWEEK   4
+#define   NOYEAR   15
+#define   LINE     80
+#define	  ORDERSIZ	9
+
+EXEC SQL INCLUDE SQLCA;
+
+void u_debug(const char *fmt, ...);
+void w_debug(const char *fmt, ...);
+
+extern int ownpid;
+/* 
+** func: create a connection to db
+** auth: zhaohao
+** date: 2001.06.28
+** note: when you connect only a db, you can ignore the connection name
+**	 but if your db great then one, you must write the connection name
+*/
+EXEC SQL WHENEVER SQLERROR CALL error_handler();
+EXEC SQL WHENEVER SQLWARNING CALL warning_handler();
+EXEC SQL WHENEVER NOT FOUND CONTINUE;
+
+/*  
+int db_login(char *server, char *dbname, char *user, char *passwd)
+{
+    EXEC SQL BEGIN DECLARE SECTION;
+        char tserver[20];
+        char tdbname[20];
+        char tuser[20];
+        char tpasswd[20];
+    EXEC SQL END DECLARE SECTION;
+
+    memset(tserver, 0, sizeof(tserver));
+    memset(tdbname, 0, sizeof(tdbname));
+    memset(tuser, 0, sizeof(tuser));
+    memset(tpasswd, 0, sizeof(tpasswd));
+
+    strcpy(tserver, server);
+    strcpy(tdbname, dbname);
+    strcpy(tuser, user);
+    strcpy(tpasswd, passwd);
+/*
+    strcpy(tserver, "BOSS_SA");
+    strcpy(tdbname, "boss");
+    strcpy(tuser, "big_oper");
+    strcpy(tpasswd, "7yb2di");
+*/
+
+    EXEC SQL CONNECT :tuser IDENTIFIED by :tpasswd 
+		AT :tserver USING :tserver;
+	EXEC SQL USE :tdbname;
+
+	return SQLCODE;
+}
+*/
+
+int db_login(char *dbnameyx,char* username,char* password)
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+    char dbuser[30];
+    char dbpswd[30];
+    char dbname[30];
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL WHENEVER SQLERROR DO error_handler();
+  EXEC SQL WHENEVER SQLWARNING DO warning_handler();
+  EXEC SQL WHENEVER NOT FOUND CONTINUE;
+
+  memset(dbuser,0x0,sizeof(dbuser));
+  memset(dbpswd,0x0,sizeof(dbpswd));
+  memset(dbname,0x0,sizeof(dbname));
+
+  /*strncpy(dbuser,indbsec,strstr(indbsec,"/")-indbsec);
+  strncpy(dbpswd,indbsec+(strstr(indbsec,"/")-indbsec+1),strstr(indbsec,"@")-strstr(indbsec,"/")-1);
+  strcpy(dbname,indbsec+(strstr(indbsec,"@")-indbsec)+1);*/
+  sprintf(dbuser,"%s",username);
+  sprintf(dbpswd,"%s",password);
+  sprintf(dbname,"%s",dbnameyx);
+
+  printf("%s,%s,%s\n",dbuser,dbpswd,dbname);
+
+  EXEC SQL CONNECT :dbuser IDENTIFIED BY :dbpswd USING :dbname;
+
+  return SQLCODE;
+}
+
+int db_logout()
+{
+  EXEC SQL COMMIT WORK RELEASE; 
+  return SQLCODE;
+}
+
+/*
+** func: close a connection from db
+** auth: zhaohao
+** date: 2001.06.28
+*/
+int db_close(char *server)
+{
+    EXEC SQL BEGIN DECLARE SECTION;
+        char tserver[20];
+    EXEC SQL END DECLARE SECTION;
+
+    memset(tserver, 0, sizeof(tserver));
+    strcpy(tserver, server);
+
+    EXEC SQL DISCONNECT :tserver;
+
+	return SQLCODE;
+}
+
+void error_handler()
+{
+    printf("sqlca.sqlerrm.sqlerrmc=[%s]\n",sqlca.sqlerrm.sqlerrmc);
+fflush(stdout);
+    u_debug("EXEC SQL ERROR\n");
+    u_debug("sqlca.sqlerrm.sqlerrmc=[%s]\n",sqlca.sqlerrm.sqlerrmc);
+}
+
+void warning_handler()
+{
+	printf("sqlca.sqlerrm.sqlerrmc=[%s]\n",sqlca.sqlerrm.sqlerrmc);
+fflush(stdout);
+    u_debug("EXEC SQL WARNING\n");
+	u_debug("sqlca.sqlerrm.sqlerrmc=[%s]\n",sqlca.sqlerrm.sqlerrmc);
+}
+ 
+int
+get_pass(const char *username, char *userpass) 
+{
+	int		ret;
+	int		ret_value;
+	EXEC SQL BEGIN DECLARE SECTION;
+		char user[20 + 1];
+    	char password[8 + 1];
+    EXEC SQL END DECLARE SECTION;
+
+	ret = -1;
+	ret_value = 0;
+	u_debug("PAY_SERVER=[%s],PAY_USER=[%s],PAY_PASSWD=[%s]\n",PAY_SERVER,PAY_USER, PAY_PASSWD);
+	if ((ret = db_login(PAY_SERVER, PAY_DBNAME, PAY_USER, PAY_PASSWD)) != SQL_OK) {
+		u_debug("connect db error\n");
+		return -1;
+	}
+	
+	strcpy(user, username);
+    EXEC SQL SELECT password INTO :password FROM sCliPasswd
+		WHERE client_id = :user;
+
+    if (SQLCODE < 0) {
+        u_debug("db op error! username: [%s], password: [%s]\n", username, password);
+        u_debug("db op error! SQLCODE: [%d]\n", SQLCODE);
+		ret_value = -1;
+    } else if (SQLCODE == SQL_OK) {
+    	EXEC SQL COMMIT;
+		sscanf(password, "%s", password);
+		strcpy(userpass, password);
+    } else if (SQLCODE == CNO_MORE_ROWS) {
+    	EXEC SQL ROLLBACK;
+        u_debug("no more rows!\n");
+        u_debug("username: [%s], password: [%s]\n", username, password);
+		ret_value = 1;
+	}
+    db_close(PAY_SERVER);
+
+	return 0;
+}
+
+int
+add_fee(const char *city_no, const char *trans_id, const char *user_number, const char *account_pw, const char *request_time, const char *account_type, const double amount, const char *card_number, const char *comment)
+{
+	int		ret_value;
+
+	EXEC SQL BEGIN DECLARE SECTION;
+		int		ret_status;
+		int temp=0;
+		char	region_code[3+1];
+    	char	transaction_id[32 + 1];
+    	char	phone_no[11 + 1];
+		char	trade_time[14 + 1];
+		char	acct_type[4 + 1];
+		double	pay_fee = 0.0;
+        char    Tcard_no[17 + 1];
+		char	text[99 + 1];
+    EXEC SQL END DECLARE SECTION;
+	
+	memset(region_code, 0, sizeof(region_code));
+	memset(transaction_id, 0, sizeof(trans_id));
+	memset(phone_no, 0, sizeof(phone_no));
+	memset(trade_time, 0, sizeof(trade_time));
+	memset(acct_type, 0, sizeof(acct_type));
+    memset(Tcard_no, 0, sizeof(Tcard_no));
+	memset(text, 0, sizeof(text));
+
+	strcpy(region_code, city_no);
+	strcpy(transaction_id, trans_id);
+	strcpy(phone_no, user_number);
+	strcpy(trade_time, request_time);
+	strcpy(acct_type, account_type);
+	pay_fee = amount;
+    strcpy(Tcard_no,card_number);
+	strcpy(text, comment);
+
+    if (db_login(PAY_DBNAME, PAY_USER, PAY_PASSWD) ) {
+        u_debug("add_fee: connect db error\n");
+        return(-1);
+    }
+
+	u_debug("******region_code = [%s]\n", region_code);
+	u_debug("******transaction_id = [%s]\n", transaction_id);
+	u_debug("******phone_no = [%s]\n", phone_no);
+	u_debug("******trade_time = [%s]\n", trade_time);
+	u_debug("******acct_type = [%s]\n", acct_type);
+	u_debug("******pay_fee = [%f]\n", pay_fee);
+  u_debug("******Tcard_no = [%s]\n", Tcard_no);
+	u_debug("******text = [%s]\n", text);
+
+
+	EXEC SQL EXEC :ret_status = prc_payphone_add :region_code, :transaction_id, 
+:phone_no, :trade_time, :acct_type, :pay_fee, :Tcard_no, :text;
+    
+	
+	u_debug("SQLCODE:[%d],ret_status:[%d]\n",sqlca.sqlcode,ret_status);
+	if(sqlca.sqlcode!=0 || ret_status!=0)
+		u_debug("SQLERRM:[%s],\n",sqlca.sqlerrm.sqlerrmc);
+	
+	if(sqlca.sqlcode==-2601 || ret_status==-5){
+				u_debug("流水 或者二卡卡号已存在，该二卡已充值:trans_no=%s;used_phone=%s\n",transaction_id,phone_no);
+				ret_status=1;
+	}else if(sqlca.sqlcode==0 && ret_status==0){ /*完全写表成功*/
+				ret_status=0;
+	}else ret_status=-5; /*数据库故障*/
+	
+	/*
+	if (SQLCODE == SQL_OK) {
+    	EXEC SQL COMMIT;
+		
+    } else {
+    	EXEC SQL ROLLBACK;
+        u_debug("add_fee: run prc_payphone_add fail ret_status = [%d], phone_no = [%s]\n", ret_status, phone_no);
+    }*/
+   
+   /**************超时测试，查询全表*********/
+   /*if(strncmp(phone_no,"159",3)==0) sleep(5000);
+   if(strncmp(phone_no,"159",3)==0) { 
+   	  EXEC SQL select count(*) into :temp from wLogHis where phone_no=:phone_no;
+   	  u_debug("******temp***** = [%d]\n", temp);
+   	}
+   	*/
+   /********************************/
+	EXEC SQL DISCONNECT CURRENT;
+	/*db_close(PAY_SERVER);*/
+    ret_value = ret_status;
+
+    return ret_value;
+}
+
+int
+del_fee(const char *city_no, const char *trans_id, const char *user_number, const char *request_time, const char *rev_trans_id)
+{
+	int		ret_value;
+
+    EXEC SQL BEGIN DECLARE SECTION;
+		int		ret_status;
+    char	region_code[3 + 1];
+    char	transaction_id[32 + 1];
+    char	phone_no[11 + 1];
+		char	trade_time[14 + 1];
+		char	rev_transaction_id[32 + 1];
+		char  sel_sql[1024];
+		char  ins_sql[1024];
+		char  del_sql[1024];
+		float pay_fee;
+		char  account_type[4 + 1];
+		char tmp_transaction_id[32 + 1];
+    EXEC SQL END DECLARE SECTION;
+    int i;
+    char tmp_region[2];
+    
+
+	memset(region_code, 0, sizeof(region_code));
+	memset(transaction_id, 0, sizeof(transaction_id));
+	memset(phone_no, 0, sizeof(phone_no));
+	memset(trade_time, 0, sizeof(trade_time));
+	memset(rev_transaction_id, 0, sizeof(rev_transaction_id));
+
+	strcpy(region_code, city_no);
+	strcpy(transaction_id, trans_id);
+	strcpy(phone_no, user_number);
+	strcpy(trade_time, request_time);
+	strcpy(rev_transaction_id, rev_trans_id);
+
+    if (db_login(PAY_DBNAME, PAY_USER, PAY_PASSWD) ) {
+        u_debug("add_fee: connect db error\n");
+        return(-1);
+    }
+
+	  if(strlen(rev_transaction_id)<1) 
+	  	return 1;
+	  	
+	  memset(del_sql, 0, sizeof(del_sql));
+	  strcpy(del_sql,"delete from chg_sign where transaction_id=:rev_transaction_id");
+	  EXEC SQL PREPARE stmt FROM :del_sql;
+    EXEC SQL EXECUTE stmt using :rev_transaction_id;
+    
+    memset(sel_sql, 0, sizeof(sel_sql));
+    sprintf(sel_sql,"select trans_id from dPayRec%s where trans_id=:transaction_id",city_no);
+    EXEC SQL PREPARE stmt FROM :sel_sql;
+    EXEC SQL EXECUTE stmt using :transaction_id;
+    if(SQLCODE!=SQL_OK && SQLCODE!=NO_MORE_ROWS)
+    {
+		u_debug("add_fee: select db error\n");
+    return -1;
+    }
+    if(SQLCODE=SQL_OK)
+    {
+    	 EXEC SQL ROLLBACK WORK;
+    	 strncpy(tmp_region,city_no+2,2)
+    	 i=atoi(tmp_region);
+    	 return i; 
+    }
+    
+    memset(sel_sql, 0, sizeof(sel_sql));
+    sprintf(sel_sql,"select a.trans_id
+    from dPayRec%s a, wPayLog b where a.trans_id = :rev_transaction_id and a.phone_no = :phone_no 
+    and a.unpay_flag = 0 and b.trans_id = a.trans_id 
+    and b.phone_no = a.phone_no and b.unpay_flag = a.unpay_flag",city_no);
+    EXEC SQL PREPARE stmt FROM :sel_sql;
+    EXEC SQL DECLARE cur_sel CURSOR FOR sel_sql;
+    EXEC SQL OPEN cur_sel using :rev_transaction_id,:phone_no;
+    EXEC SQL FETCH cur_sel INTO :tmp_transaction_id;
+    	
+    if(SQLCODE!=SQL_OK && SQLCODE!=NO_MORE_ROWS)
+    {
+			u_debug("add_fee: select db error\n");
+    	return -1;
+    }
+    
+    if(SQLCODE=NO_MORE_ROWS)
+    	{
+    		EXEC SQL ROLLBACK WORK;
+    		memset(ins_sql, 0, sizeof(ins_sql));
+    		strcpy(ins_sql,"insert wErrLog values(:city_no, :transaction_id, :phone_no,:pay_time, null, null, 1,:rev_trans_id, 2)");
+    		
+    	  EXEC SQL PREPARE stmt FROM :ins_sql;
+    	  EXEC SQL EXECUTE stmt using :city_no, :transaction_id,:phone_no,:pay_time,:rev_trans_id;
+    	  strncpy(tmp_region,city_no+2,2)
+    	  i=atoi(tmp_region);
+    	  return i; 	
+    	}
+    	
+    EXEC SQL CLOSE cur_sel;
+    	
+    memset(sel_sql, 0, sizeof(sel_sql));
+    sprintf(sel_sql,"select amount, account_type from dPayRec%s where trans_id = :rev_trans_id and phone_no = :phone_no",city_no);
+    EXEC SQL PREPARE stmt FROM :sel_sql;
+    EXEC SQL DECLARE cur_sel CURSOR FOR sel_sql;
+    EXEC SQL OPEN cur_sel using :rev_transaction_id,:phone_no;
+    EXEC SQL FETCH cur_sel INTO :pay_fee,:account_type;
+     
+    if(SQLCODE!=SQL_OK && SQLCODE!=NO_MORE_ROWS)
+    {
+			u_debug("add_fee: select db error\n");
+    	return -1;
+    }
+    EXEC SQL CLOSE cur_sel;
+    
+    memset(ins_sql, 0, sizeof(ins_sql));
+    sprintf(ins_sql,"insert dPayRec%s values(:city_no, :transaction_id, :phone_no, :account_type, :pay_fee*-1, :pay_time, to_date(sysdate,'yyyymmdd'), "", :unpay_flag, :rev_trans_id, 0,"11111111111111111")",city_no);
+    EXEC SQL PREPARE stmt FROM :ins_sql;
+    EXEC SQL EXECUTE stmt using :city_no,:transaction_id,:phone_no,:account_type,:pay_fee,:pay_time,:unpay_flag,:rev_trans_id;
+    if(SQLCODE!=SQL_OK )
+    {
+    	EXEC SQL ROLLBACK WORK;
+			u_debug("add_fee: insert db error\n");
+    	return -1;
+    }
+    
+    memset(ins_sql, 0, sizeof(ins_sql));
+    strcpy(ins_sql,"insert into wPayLog values(:city_no, :transaction_id, :pay_time, :phone_no, :account_type, :pay_fee * -1, 1, :rev_trans_id, 0, "手机充值卡删")");
+    EXEC SQL PREPARE stmt FROM :ins_sql;
+    EXEC SQL EXECUTE stmt using :city_no,:transaction_id,:pay_time,:phone_no,:account_type,:pay_fee,:pay_time,:rev_trans_id;
+    if(SQLCODE!=SQL_OK )
+    {
+    	EXEC SQL ROLLBACK WORK;
+			u_debug("add_fee: insert db error\n");
+    	return -1;
+    }
+    db_logout();
+    return 0;
+    
+/*    
+	  
+printf("transaction_id:[%s],phone_no:[%s],rev_transaction_id:[%s]",transaction_id,phone_no,rev_transaction_id);
+EXEC SQL EXEC :ret_status = prc_unpayphone_add :region_code, :transaction_id,
+:phone_no, :trade_time, :rev_transaction_id;
+
+	u_debug("SQLERRM:[%s],\n",sqlca.sqlerrm.sqlerrmc);
+	u_debug("SQLCODE:[%d],ret_status:[%d]\n",sqlca.sqlcode,ret_status);
+
+    if (SQLCODE == SQL_OK) {
+    	EXEC SQL COMMIT;
+    } else {
+    	EXEC SQL ROLLBACK TRAN;
+        u_debug("run prc_unpayphone_add fail ret_status = [%d], phone_no = [%s]\n", ret_status, phone_no);
+    }
+fprintf(stderr, "sssssssi=[%d]\n", ret_status);
+    db_close(PAY_SERVER);
+    ret_value = ret_status;
+
+    return ret_value;
+*/    
+}
+
+void u_debug(const char *fmt, ...)
+{
+	va_list args;
+	FILE    *fp;
+	char filename[30],*ttyname(),*tname;
+	struct tm tv;
+    long t;
+
+	tname=ttyname(TRUE);
+	time(&t);
+    tv=*localtime(&t);
+	sprintf( filename, "%s/app%04d%02d%02d", getenv("TEMPDIR"), \
+			tv.tm_year+1900, tv.tm_mon+1, tv.tm_mday );
+	fp=fopen(filename,"a");
+	va_start(args, fmt);
+	vfprintf(fp,fmt,args);
+	va_end(args);
+	fclose(fp);
+}
+
+void w_debug(const char *fmt, ...)
+{
+	va_list args;
+	FILE    *fp;
+	char filename[30],*ttyname(),*tname;
+	struct tm tv;
+	long   t;
+
+	tname=ttyname(TRUE);
+	time(&t);
+    tv=*localtime(&t);
+    sprintf( filename, "%s/add%04d%02d%02d", getenv("TEMPDIR"), \
+            tv.tm_year+1900, tv.tm_mon+1, tv.tm_mday );
+	fp=fopen(filename,"a");
+	va_start(args, fmt);
+	vfprintf(fp,fmt,args);
+	va_end(args);
+	fclose(fp);
+}
+
+void format_debug(char * fileHead,char * phone_no,char * seq,const char *fmt, ...)
+{
+	va_list args;
+	FILE    *fp;
+	char filename[128]={0},tmp_filename[128]={0},*ttyname(),*tname;
+	int flag=0;
+	tname=ttyname(TRUE);
+	
+  sprintf( filename, "%s/%s.%s.%s", getenv("EMENT_DIR"), fileHead,phone_no,\
+             seq);
+  sprintf(tmp_filename,"%s.tmp",filename);
+  
+	fp=fopen(tmp_filename,"a");
+	va_start(args, fmt);
+	vfprintf(fp,fmt,args);
+	va_end(args);
+	fclose(fp);
+	printf("%s\n%s",tmp_filename,filename);
+	flag=rename(tmp_filename,filename);
+	if(flag!=0) printf("文件名变更失败:%s\n",tmp_filename);
+		else printf("文件生成成功\n");
+}
+
+
+/****  add pusj 20130606 郭荣辉探测号码需求 ***/
+void jttc_debug(const char *fmt, ...)
+{
+	va_list args;
+	FILE    *fp;
+	char filename[30],*ttyname(),*tname;
+
+
+	tname=ttyname(TRUE);
+
+	sprintf( filename, "%s/JTTC.info", getenv("JTTCDIR") );
+	fp=fopen(filename,"a");
+	va_start(args, fmt);
+	vfprintf(fp,fmt,args);
+	va_end(args);
+	fclose(fp);
+}
+
+/***********************/
+void format_TRANS(const char *fmt, ...)
+{
+  va_list args;
+	FILE    *fp;
+	struct tm tv;
+	time_t t=0;
+	int year=0,month=0,day=0,hour=0,min=0,sec=0;
+	char filename[30],*ttyname(),*tname;	
+	char headStr[32];
+
+	memset(&tv,0,sizeof(struct tm));
+	memset(headStr,'\0',sizeof(headStr));
+	time(&t);
+  tv=*localtime(&t);
+	tname=ttyname(TRUE);
+	year=tv.tm_year+1900;
+	month=tv.tm_mon+1;
+	day=tv.tm_mday;
+	hour=tv.tm_hour;
+	min=tv.tm_min;
+	sec=tv.tm_sec;
+	
+	sprintf(headStr,"%04d-%02d-%02d %02d:%02d:%02d ",year,month,day,hour,min,sec);
+	
+	sprintf( filename, "%s/INTER_TRANS.%04d%02d%02d", getenv("ALL_DIR"), year,month,day );
+	fp=fopen(filename,"a");
+	fprintf(fp,"%s",headStr);
+
+	va_start(args, fmt);
+	vfprintf(fp,fmt,args);
+	va_end(args);
+	fclose(fp);
+
+}
+
+int kill_daemon(char *filename)
+{
+   FILE *fp;
+   char command[LINE + 1];
+   char line[LINE + 1];	/* added by hanzh */
+   char buffer1[30], buffer2[30], buffer3[30], buffer4[30];
+
+   memset(command, '\0', sizeof(command));
+   sprintf(command, "ps -e | grep '%s' | grep -v grep", filename);
+printf("command=[%s]\n", command);
+   if ((fp = popen(command, "r")) == NULL) {
+	syslog("open %s error!", command, __FILE__, __LINE__);
+	exit(-1);
+   }	
+
+   memset(line, '\0', sizeof(line));
+   while(fgets(line, LINE, fp) != NULL) {
+       	memset(buffer1, '\0', sizeof(buffer1));
+       	memset(buffer2, '\0', sizeof(buffer2));
+     	memset(buffer3, '\0', sizeof(buffer3));
+       	memset(buffer4, '\0', sizeof(buffer4));
+
+       	/*fscanf(fp, "%s %s %s %s", buffer1, buffer2, buffer3, buffer4);
+*//* modified by hanzh */
+       	sscanf(line, "%s%s%s%s\n", buffer1, buffer2, buffer3, buffer4);
+
+	if (strcmp(buffer4, filename) == 0)
+	   if (atoi(buffer1) != getpid()) {
+                printf("%s daemon has Running!\n",filename);
+                return 1;
+	   }
+   }
+   pclose(fp);
+}

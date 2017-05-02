@@ -2083,7 +2083,7 @@ void entry_loop(const char *hlrcode, const char *tname, entry_callback callback,
         struct cmd11 *c;
         int rec_idx;
 
-        //printf("selsql[%s]\n", selsql);
+        /* printf("selsql[%s]\n", selsql); */
         EXEC SQL PREPARE sel_sql FROM :selsql;
         EXEC SQL DECLARE cur_sel CURSOR FOR sel_sql;
         EXEC SQL PREPARE upd_sql FROM :updsql;
@@ -2103,8 +2103,8 @@ void entry_loop(const char *hlrcode, const char *tname, entry_callback callback,
             rowlimit = MAXLINE;
             memset(&c1, 0, sizeof(c1));
             EXEC SQL FETCH cur_sel INTO :c1;
-            //fprintf(logfp, "%ld fetch return SQLCODE=%d SQLROWS=%d SQLERRMSG=[%s]\n",
-            //    time(NULL), SQLCODE, SQLROWS, SQLERRMSG); fflush(logfp);
+            /* fprintf(logfp, "%ld fetch return SQLCODE=%d SQLROWS=%d SQLERRMSG=[%s]\n",
+            //    time(NULL), SQLCODE, SQLROWS, SQLERRMSG); fflush(logfp); */
             endflag = (SQLCODE == 1403);
             if(SQLCODE == 1403 && SQLROWS == 0){
                 if(callback(NULL, 0, connid) != 0){

@@ -399,7 +399,9 @@ struct login_ack
 };
 #define		LOGINACKLEN		sizeof(struct login_ack)
 
-/* 开关机业务命令数据格式【10000001】 */
+/* 开关机业务命令数据格式【10000001】
+offon_entry 向 manager发送的指令数据， 单条记录格式
+*/
 #define		SRVCODE0001		10000001
 struct op_data_req
 {

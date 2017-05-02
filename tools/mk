@@ -1,0 +1,2 @@
+gcc -o sel proxy_sel.c -lsocket -lnsl
+./sel ports.conf
