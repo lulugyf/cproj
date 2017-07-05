@@ -120,6 +120,7 @@ bool db_connect1::stuff(){
 						L4C_TRACE("测试ORACLE数据库连接失败：%s : %s : %s",p.msg,p.stm_text,p.var_info);
 					}
 					lastTry=now;
+                    potl->logoff(); ////////by guanyf, 20130123 四川crm5.7环境发现问题， 检测到连接异常后， 没有关闭直接重新连接导致异常
 					L4C_WARN("ORACLE数据库连接断开，重连数据库");
 				}else
 					throw(appException(306*1001000+2, "未知数据库类型"));
