@@ -35,3 +35,5 @@ csf_sc/framework/pub/libcallesbcurl/curl_home_linux/lib/pkgconfig
 tools/conf
 cms
 csf_sc/framework/pub/libcallesbcurl
+csf_sc/framework/pub/tuxadp/sx
+csf_sc/framework/pub/tuxadp/sxbilling
