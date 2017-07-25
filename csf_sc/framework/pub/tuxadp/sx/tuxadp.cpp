@@ -143,7 +143,7 @@ void* busiwork(void* v1, db_connect* pdb, bool isLong)
 	TCtrlInfoEx* ctrlInfo=(TCtrlInfoEx*)v1;
 
 	if(strcmp(pdb->getCurType(), "MDB")==0){
-		ctrlInfo->mdb=&pdb->getMDBHandle();
+        //ctrlInfo->mdb=&pdb->getMDBHandle();
 		ctrlInfo->db=ctrlInfo->maindb;
 	}else{
 		ctrlInfo->db=&pdb->getOtlHandle();
@@ -165,7 +165,7 @@ void* busiwork1(void* v1, db_connect1* pdb, bool isLong)
 	TCtrlInfoEx* ctrlInfo=(TCtrlInfoEx*)v1;
 
 	if(strcmp(pdb->getCurType(), "MDB")==0){
-		ctrlInfo->mdb=&pdb->getMDBHandle();
+        //ctrlInfo->mdb=&pdb->getMDBHandle();
 		ctrlInfo->db=ctrlInfo->maindb;
 	}else{
 		ctrlInfo->db=&pdb->getOtlHandle();

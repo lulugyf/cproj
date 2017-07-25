@@ -802,6 +802,23 @@ void dotuxadp(char **obuf, int* obufLen, const char *psServiceName,
 					L4C_WARN("%s", sPromptMsg.c_str());
 				L4C_TRACE("bindRetBuff output end");
 			} catch (...) {
+                try{  //用于判断准确的错误类型 2017-7-25
+                 throw;
+                }catch(uException& err){
+                        L4C_ERROR("bindRetBuff uException code = [%ld] error msg = [%s]", err.errCode, err.errMsg);
+                }
+                catch(otl_exception& otlErr){// intercept OTL exceptions
+                        L4C_ERROR("bindRetBuff otl_exception code = [%ld] error msg = [%s]", otlErr.code, otlErr.msg);
+                }
+                catch(appException& appErr){
+                        L4C_ERROR("bindRetBuff appException code = [%ld] error msg = [%s]", appErr.errCode, appErr.errMsg);
+                }
+                catch(std::exception& err){
+                        L4C_ERROR("bindRetBuff std::exception error msg = [%s]", err.what());
+                }catch(...){
+                        L4C_ERROR("bindRetBuff unknown error");
+                }
+
 				retCode = 303 * 1000000;
 				strcpy(retMsg, "转换utype结构至XML失败，请检查是否节点名中包含不合法字符");
 				L4C_ERROR(_LOG_FMT, retCode, retMsg);
